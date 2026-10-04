@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>競技かるた 暗記＆配置トレーニング（100首フル対応）</title>
+  <title>競技かるた 暗記＆配置トレーニング</title>
   <style>
     :root {
       --tatami-bg: #d8be92;
@@ -65,6 +65,8 @@
     button.secondary:hover { background: #444; }
     button.action { background: #c62828; }
     button.action:hover { background: #b71c1c; }
+    button.shift-btn { background: #e65100; }
+    button.shift-btn:hover { background: #ef6c00; }
 
     .board {
       background-color: var(--tatami-bg);
@@ -189,6 +191,8 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .deck-area {
@@ -214,8 +218,17 @@
       padding: 2px;
     }
 
+    .shift-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      background: #1e1e1e;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+
     .status-text {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #f39c12;
       font-weight: bold;
     }
@@ -223,7 +236,7 @@
 </head>
 <body>
 
-  <h1>競技かるた 暗記＆配置トレーニング（100首対応）</h1>
+  <h1>競技かるた 暗記＆配置トレーニング</h1>
 
   <div class="toolbar">
     <button onclick="initGame()">新しく並べる (50枚選出)</button>
@@ -233,17 +246,17 @@
   </div>
 
   <div class="board">
-    <!-- 相手陣 -->
+    <!-- 相手陣（段ごとの左右寄せボタン復活） -->
     <div class="field-section enemy-field">
       <div class="section-title">
         <span>相手陣</span>
         <div class="align-btns">
-          <button onclick="alignRow('enemy', 0, 'left')">上段左寄</button>
-          <button onclick="alignRow('enemy', 0, 'right')">上段右寄</button>
-          <button onclick="alignRow('enemy', 1, 'left')">中段左寄</button>
-          <button onclick="alignRow('enemy', 1, 'right')">中段右寄</button>
-          <button onclick="alignRow('enemy', 2, 'left')">下段左寄</button>
-          <button onclick="alignRow('enemy', 2, 'right')">下段右寄</button>
+          <button onclick="alignEnemyRow(0, 'left')">上段左寄</button>
+          <button onclick="alignEnemyRow(0, 'right')">上段右寄</button>
+          <button onclick="alignEnemyRow(1, 'left')">中段左寄</button>
+          <button onclick="alignEnemyRow(1, 'right')">中段右寄</button>
+          <button onclick="alignEnemyRow(2, 'left')">下段左寄</button>
+          <button onclick="alignEnemyRow(2, 'right')">下段右寄</button>
         </div>
       </div>
       <div class="row-grid" id="enemy-row-0"></div>
@@ -257,14 +270,6 @@
     <div class="field-section self-field">
       <div class="section-title">
         <span>自陣</span>
-        <div class="align-btns">
-          <button onclick="alignRow('self', 0, 'left')">上段左寄</button>
-          <button onclick="alignRow('self', 0, 'right')">上段右寄</button>
-          <button onclick="alignRow('self', 1, 'left')">中段左寄</button>
-          <button onclick="alignRow('self', 1, 'right')">中段右寄</button>
-          <button onclick="alignRow('self', 2, 'left')">下段左寄</button>
-          <button onclick="alignRow('self', 2, 'right')">下段右寄</button>
-        </div>
       </div>
       <div class="row-grid" id="self-row-0"></div>
       <div class="row-grid" id="self-row-1"></div>
@@ -277,14 +282,20 @@
       <div class="deck-card" id="current-deck-card">束</div>
       <div>
         <div>自陣山札: <span id="deck-count">25</span> 枚</div>
-        <div style="font-size: 0.75rem; color: #aaa;">マス目タップで配置 / 札タップで移動・選択</div>
       </div>
     </div>
+
+    <!-- 自陣用：選択札のグループ寄せ操作 -->
+    <div class="shift-controls">
+      <span style="font-size:0.8rem; color:#ccc;">自陣選択札の寄せ:</span>
+      <button class="shift-btn" onclick="shiftSelfGroup('left')">← 端まで左寄せ</button>
+      <button class="shift-btn" onclick="shiftSelfGroup('right')">端まで右寄せ →</button>
+    </div>
+
     <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
   </div>
 
   <script>
-    // 百人一首 全100首データ (1~100)
     const RAW_DATA = [
       [1,"あきのたの","わかころもてはつゆにぬれつつ"],[2,"はるすきて","ころもほすてふあまのかくやま"],
       [3,"あしひきの","ながながしよをひとりかもねむ"],[4,"たこのうらに","ふしのたかねにゆきはふりつつ"],
@@ -344,7 +355,7 @@
     let selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfDeck = [];
     let currentCard = null;
-    let selectedSlot = null;
+    let selectedSlot = null; // { r: 0..2, c: 0..14 } 自陣の選択用
     let isMemorizeMode = false;
 
     function initGame() {
@@ -352,7 +363,6 @@
       selectedSlot = null;
       document.getElementById('start-btn').textContent = "暗記スタート (裏返す)";
 
-      // 100首からランダムに50首を選出（競技かるたルール）
       const shuffled = [...HYAKUNIN_ISSHU].sort(() => Math.random() - 0.5);
       const selected50 = shuffled.slice(0, 50);
 
@@ -374,13 +384,13 @@
 
       popDeckCard();
       renderAll();
-      updateStatus("自陣のマス目をタップして札を並べてね");
+      updateStatus("自陣のマス目を選んで札を置いてね");
     }
 
     function popDeckCard() {
       if (selfDeck.length > 0) {
         currentCard = selfDeck.pop();
-        document.getElementById('current-deck-card').textContent = currentCard.kami;
+        document.getElementById('current-deck-card').textContent = currentCard.shimo;
       } else {
         currentCard = null;
         document.getElementById('current-deck-card').textContent = "完了";
@@ -407,7 +417,7 @@
             const card = document.createElement('div');
             card.className = `card ${cardData.isFaceDown ? 'back' : ''}`;
 
-            if (selectedSlot && selectedSlot.r === r && selectedSlot.c === c && side === 'self') {
+            if (side === 'self' && selectedSlot && selectedSlot.r === r && selectedSlot.c === c) {
               card.classList.add('selected');
             }
 
@@ -433,6 +443,7 @@
         return;
       }
 
+      // 自陣の操作のみ受付
       if (side === 'self') {
         const card = selfBoard[r][c];
 
@@ -455,7 +466,7 @@
         } else {
           if (card) {
             selectedSlot = { r, c };
-            updateStatus("移動先の空きマスか、入れ替える札を選んでね");
+            updateStatus("自陣の札を選択しました。移動・入れ替えまたは下のボタンでグループ寄せができます");
           } else if (currentCard) {
             selfBoard[r][c] = { ...currentCard, isFaceDown: false };
             popDeckCard();
@@ -464,6 +475,86 @@
         }
         renderAll();
       }
+    }
+
+    // 相手陣の一括左右寄せ
+    function alignEnemyRow(rowIdx, direction) {
+      const row = enemyBoard[rowIdx];
+      const cards = row.filter(c => c !== null);
+      const newRow = Array(15).fill(null);
+
+      if (direction === 'left') {
+        for (let i = 0; i < cards.length; i++) newRow[i] = cards[i];
+      } else {
+        for (let i = 0; i < cards.length; i++) newRow[15 - cards.length + i] = cards[i];
+      }
+
+      enemyBoard[rowIdx] = newRow;
+      renderAll();
+      updateStatus(`相手陣 ${rowIdx + 1}段目を${direction === 'left' ? '左' : '右'}に寄せました`);
+    }
+
+    // 自陣の選択グループ寄せ
+    function shiftSelfGroup(direction) {
+      if (!selectedSlot) {
+        updateStatus("自陣の札をタップして選択してから動かしてね！");
+        return;
+      }
+
+      const { r, c } = selectedSlot;
+      const row = selfBoard[r];
+
+      if (!row[c]) return;
+
+      let groupStart = c;
+      let groupEnd = c;
+
+      while (groupStart > 0 && row[groupStart - 1] !== null) groupStart--;
+      while (groupEnd < 14 && row[groupEnd + 1] !== null) groupEnd++;
+
+      const groupCards = row.slice(groupStart, groupEnd + 1);
+
+      if (direction === 'left') {
+        let leftSpaceCount = 0;
+        for (let i = groupStart - 1; i >= 0; i--) {
+          if (row[i] === null) leftSpaceCount++;
+        }
+        if (leftSpaceCount === 0) {
+          updateStatus("これ以上左に寄せられません");
+          return;
+        }
+
+        const newGroupStart = groupStart - leftSpaceCount;
+        for (let i = groupStart; i <= groupEnd; i++) row[i] = null;
+        for (let i = 0; i < groupCards.length; i++) {
+          row[newGroupStart + i] = groupCards[i];
+        }
+
+        selectedSlot.c = newGroupStart + (c - groupStart);
+
+      } else if (direction === 'right') {
+        let rightSpaceCount = 0;
+        for (let i = groupEnd + 1; i < 15; i++) {
+          if (row[i] === null) rightSpaceCount++;
+        }
+        if (rightSpaceCount === 0) {
+          updateStatus("これ以上右に寄せられません");
+          return;
+        }
+
+        const newGroupEnd = groupEnd + rightSpaceCount;
+        const newGroupStart = newGroupEnd - groupCards.length + 1;
+
+        for (let i = groupStart; i <= groupEnd; i++) row[i] = null;
+        for (let i = 0; i < groupCards.length; i++) {
+          row[newGroupStart + i] = groupCards[i];
+        }
+
+        selectedSlot.c = newGroupStart + (c - groupStart);
+      }
+
+      renderAll();
+      updateStatus("グループを寄せました");
     }
 
     function resetSelfBoard() {
@@ -483,23 +574,7 @@
       selectedSlot = null;
       popDeckCard();
       renderAll();
-      updateStatus("自陣の札をリセットして山札に戻しました");
-    }
-
-    function alignRow(side, rowIdx, direction) {
-      const board = side === 'enemy' ? enemyBoard : selfBoard;
-      const row = board[rowIdx];
-      const cards = row.filter(c => c !== null);
-      const newRow = Array(15).fill(null);
-
-      if (direction === 'left') {
-        for (let i = 0; i < cards.length; i++) newRow[i] = cards[i];
-      } else {
-        for (let i = 0; i < cards.length; i++) newRow[15 - cards.length + i] = cards[i];
-      }
-
-      board[rowIdx] = newRow;
-      renderAll();
+      updateStatus("自陣の札をリセットしました");
     }
 
     function autoPlaceSelf() {
