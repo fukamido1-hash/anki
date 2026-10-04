@@ -1,933 +1,597 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>競技かるた 暗記トレーナー（公式左右分離・自在移動対応）</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        body {
-            font-family: 'Shippori Mincho', serif;
-            background-color: #121212;
-            color: #f3f4f6;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>競技かるた 暗記＆配置トレーニング</title>
+  <style>
+    :root {
+      --tatami-bg: #d8be92;
+      --tatami-border: #6a4f28;
+      --card-bg: #fffcf2;
+      --card-border: #225128;
+      --text-color: #111;
+      --grid-border: rgba(100, 70, 30, 0.2);
+      --selected: #e74c3c;
+    }
 
-        /* 畳のリアルな背景テクスチャ */
-        .tatami-bg {
-            background-color: #556b2f;
-            background-image: 
-                linear-gradient(90deg, rgba(0,0,0,0.12) 1px, transparent 1px),
-                linear-gradient(rgba(0,0,0,0.12) 1px, transparent 1px);
-            background-size: 12px 12px;
-            box-shadow: inset 0 0 120px rgba(0,0,0,0.75);
-            border: 14px solid #3a2518;
-        }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
 
-        /* 3Dカードフリップ */
-        .perspective-1000 {
-            perspective: 1000px;
-        }
+    body {
+      margin: 0;
+      padding: 10px;
+      background-color: #222;
+      color: #fff;
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Sawarabi Mincho', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-        .card-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.4s cubic-bezier(0.4, 0.2, 0.2, 1);
-            transform-style: preserve-3d;
-        }
+    h1 {
+      margin: 5px 0 10px 0;
+      font-size: 1.2rem;
+      text-align: center;
+    }
 
-        .card-flipped .card-inner {
-            transform: rotateY(180deg);
-        }
+    /* ツールバー */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 10px;
+      background: #333;
+      padding: 8px 15px;
+      border-radius: 8px;
+    }
 
-        /* 相手陣の札は天地逆さま（180度回転） */
-        .opponent-card .card-front-content {
-            transform: rotate(180deg);
-        }
+    button {
+      background: #38761d;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
 
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            border-radius: 4px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-        }
+    button:hover {
+      background: #274e13;
+    }
 
-        /* 取り札（緑枠・和紙風） */
-        .card-front {
-            background: #fdfbf7;
-            border: 2px solid #1c4d28;
-            color: #111;
-            padding: 3px;
-        }
+    button.secondary {
+      background: #555;
+    }
 
-        /* 札裏面（朱色・和風グラデーション） */
-        .card-back {
-            background: #8b0000;
-            background-image: radial-gradient(#a52a2a 20%, transparent 20%), radial-gradient(#a52a2a 20%, transparent 20%);
-            background-size: 8px 8px;
-            background-position: 0 0, 4px 4px;
-            border: 2px solid #5c0000;
-            transform: rotateY(180deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    button.secondary:hover {
+      background: #444;
+    }
 
-        .vertical-text {
-            writing-mode: vertical-rl;
-            text-orientation: upright;
-            letter-spacing: 0.08em;
-        }
+    button.action {
+      background: #cc0000;
+    }
 
-        /* 重ね並べ用スロット構造 */
-        .lane-slot {
-            min-height: 90px;
-            background-color: rgba(0, 0, 0, 0.22);
-            border: 1.5px dashed rgba(255, 255, 255, 0.25);
-            border-radius: 6px;
-            position: relative;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 4px;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
+    button.action:hover {
+      background: #990000;
+    }
 
-        .lane-slot.drag-over {
-            background-color: rgba(245, 158, 11, 0.4);
-            border-color: #f59e0b;
-            box-shadow: inset 0 0 12px rgba(245, 158, 11, 0.5);
-        }
+    /* 畳の盤面 */
+    .board {
+      background-color: var(--tatami-bg);
+      border: 10px solid var(--tatami-border);
+      border-radius: 4px;
+      padding: 8px;
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
 
-        .lane-slot.selected-target {
-            background-color: rgba(16, 185, 129, 0.4);
-            border-color: #10b981;
-            box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.5);
-        }
+    .field-section {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
 
-        /* 重ね配置のスタイル */
-        .card-overlapping {
-            display: inline-block;
-            margin-right: -2.3rem; /* 重なり幅 */
-            transition: margin 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-            flex-shrink: 0;
-        }
+    .section-title {
+      color: #3d2b0f;
+      font-weight: bold;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
 
-        .card-overlapping:last-child {
-            margin-right: 0;
-        }
+    .align-btns {
+      display: flex;
+      gap: 3px;
+      flex-wrap: wrap;
+    }
 
-        .card-overlapping:hover, .card-selected {
-            z-index: 50 !important;
-            transform: translateY(-6px) scale(1.05);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.6);
-        }
+    .align-btns button {
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      background: #6a4f28;
+    }
 
-        .card-selected {
-            outline: 3px solid #f59e0b;
-            border-radius: 4px;
-        }
+    .align-btns button:hover {
+      background: #4a3518;
+    }
 
-        /* カスタムスクロールバー */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a5568;
-            border-radius: 3px;
-        }
-    </style>
+    /* 15マスグリッド行 */
+    .row-grid {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      gap: 2px;
+      background: rgba(0,0,0,0.06);
+      padding: 2px;
+      border-radius: 2px;
+    }
+
+    /* マス目 */
+    .slot {
+      aspect-ratio: 0.7;
+      border: 1px dashed var(--grid-border);
+      border-radius: 2px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .slot:hover {
+      background: rgba(56, 118, 29, 0.2);
+    }
+
+    /* 札デザイン */
+    .card {
+      width: 100%;
+      height: 100%;
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 2px;
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1px;
+      box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      cursor: pointer;
+      position: relative;
+      font-size: 0.65rem;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    /* 敵陣は札が逆さま */
+    .enemy-field .card-text {
+      transform: rotate(180deg);
+    }
+
+    .card.back {
+      background: #225128;
+      border: 1.5px solid #fff;
+    }
+
+    .card.back .card-text {
+      display: none;
+    }
+
+    .card.selected {
+      outline: 2px solid var(--selected);
+    }
+
+    /* 中央境界線 */
+    .center-divider {
+      height: 2px;
+      background: var(--tatami-border);
+      margin: 2px 0;
+      opacity: 0.6;
+    }
+
+    /* 山札・ステータスエリア */
+    .controls-bottom {
+      margin-top: 10px;
+      width: 100%;
+      max-width: 1000px;
+      background: #2a2a2a;
+      padding: 8px 15px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .deck-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .deck-card {
+      width: 42px;
+      height: 60px;
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 3px;
+      color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 0.75rem;
+      writing-mode: vertical-rl;
+      font-weight: bold;
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+      padding: 2px;
+    }
+
+    .deck-info {
+      font-size: 0.85rem;
+    }
+
+    .status-text {
+      font-size: 0.9rem;
+      color: #f1c40f;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between">
+<body>
 
-    <!-- ヘッダー / コントロールバー -->
-    <header class="bg-stone-900 border-b border-amber-900/50 p-3 sticky top-0 z-50 shadow-2xl">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-            
-            <!-- アプリタイトル -->
-            <div class="flex items-center gap-3">
-                <i class="fa-solid fa-layer-group text-amber-500 text-2xl"></i>
-                <div>
-                    <h1 class="text-base sm:text-lg font-bold text-amber-100 tracking-wider">競技かるた 暗記トレーナー</h1>
-                    <p class="text-[11px] text-amber-300/80">左右完全分離レイアウト・高度自陣/相手陣手動配置対応</p>
-                </div>
-            </div>
+  <h1>競技かるた 暗記＆配置トレーニング</h1>
 
-            <!-- 暗記タイマー -->
-            <div class="flex items-center gap-3 bg-stone-950 px-3 py-1.5 rounded-lg border border-amber-900/40">
-                <div class="text-center">
-                    <span class="text-[10px] text-stone-400 block font-sans">15分暗記タイマー</span>
-                    <span id="timer-display" class="font-mono text-lg text-amber-400 font-bold">15:00</span>
-                </div>
-                <div class="flex gap-1">
-                    <button id="btn-timer-toggle" class="p-1.5 bg-amber-800 hover:bg-amber-700 text-white rounded transition text-xs" title="再生/一時停止">
-                        <i class="fa-solid fa-play" id="timer-icon"></i>
-                    </button>
-                    <button id="btn-timer-reset" class="p-1.5 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded transition text-xs" title="リセット">
-                        <i class="fa-solid fa-rotate-left"></i>
-                    </button>
-                </div>
-            </div>
+  <div class="toolbar">
+    <button onclick="initGame()">リセット・新しく並べる</button>
+    <button class="secondary" onclick="autoPlaceSelf()">自陣をおまかせ自動配置</button>
+    <button class="action" id="start-btn" onclick="toggleMemorizeMode()">暗記スタート (裏返す)</button>
+  </div>
 
-            <!-- 操作メインボタン -->
-            <div class="flex items-center gap-2 flex-wrap">
-                <button id="btn-mode-placement" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded shadow transition text-xs flex items-center gap-1.5">
-                    <i class="fa-solid fa-hand-pointer"></i>
-                    <span>手動配置モード</span>
-                </button>
-                <button id="btn-flip-all" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded shadow transition flex items-center gap-1.5 text-xs">
-                    <i class="fa-solid fa-eye-slash"></i>
-                    <span id="flip-btn-text">暗記スタート (全裏返し)</span>
-                </button>
-                <button id="btn-reshuffle" class="px-3 py-1.5 bg-stone-800 hover:bg-stone-700 text-amber-200 border border-amber-900/50 rounded shadow transition text-xs flex items-center gap-1.5">
-                    <i class="fa-solid fa-arrows-rotate"></i>
-                    <span>おまかせ全自動配札</span>
-                </button>
-            </div>
+  <div class="board">
+    <!-- 相手陣 -->
+    <div class="field-section enemy-field">
+      <div class="section-title">
+        <span>相手陣</span>
+        <div class="align-btns">
+          <button onclick="alignRow('enemy', 0, 'left')">上段左寄</button>
+          <button onclick="alignRow('enemy', 0, 'right')">上段右寄</button>
+          <button onclick="alignRow('enemy', 1, 'left')">中段左寄</button>
+          <button onclick="alignRow('enemy', 1, 'right')">中段右寄</button>
+          <button onclick="alignRow('enemy', 2, 'left')">下段左寄</button>
+          <button onclick="alignRow('enemy', 2, 'right')">下段右寄</button>
         </div>
-
-        <!-- オプション＆サブバー -->
-        <div class="max-w-7xl mx-auto mt-2 pt-2 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3 text-xs text-stone-300">
-            <div class="flex items-center gap-4 flex-wrap">
-                <span class="text-amber-400 font-bold"><i class="fa-solid fa-sliders mr-1"></i>表示形式:</span>
-                <label class="inline-flex items-center gap-1 cursor-pointer">
-                    <input type="radio" name="display-mode" value="shimo-only" checked class="accent-amber-500">
-                    <span>下の句のみ (試合仕様)</span>
-                </label>
-                <label class="inline-flex items-center gap-1 cursor-pointer">
-                    <input type="radio" name="display-mode" value="kimari-shimo" class="accent-amber-500">
-                    <span>決まり字 + 下の句</span>
-                </label>
-                <label class="inline-flex items-center gap-1 cursor-pointer">
-                    <input type="radio" name="display-mode" value="kami-shimo" class="accent-amber-500">
-                    <span>上の句 + 下の句</span>
-                </label>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <span id="placement-status" class="text-amber-300 font-bold hidden animate-pulse">
-                    <i class="fa-solid fa-circle-info mr-1"></i>移動したい札をタップ/ドラッグし、配置先レーンを選択してください
-                </span>
-                <button id="btn-help" class="text-stone-400 hover:text-amber-200 underline">
-                    <i class="fa-regular fa-circle-question mr-1"></i>使い方・ルール
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- 競技かるた 盤面エリア（87cm幅・公式レイアウト再現） -->
-    <main class="flex-1 p-2 sm:p-4 flex flex-col items-center justify-start overflow-x-auto">
-        <div class="tatami-bg rounded-xl p-3 sm:p-5 w-full max-w-6xl min-w-[880px] flex flex-col justify-between gap-3 shadow-2xl relative my-2">
-            
-            <!-- ================= 相手陣 (Opponent Territory: 画面上部・赤枠) ================= -->
-            <div class="bg-black/30 p-3 rounded-lg border-2 border-red-900/50 shadow-inner">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="bg-red-950 text-red-200 text-xs px-2.5 py-0.5 rounded border border-red-800 font-bold">
-                            相手陣 (25枚)
-                        </span>
-                        <span class="text-[11px] text-stone-300 opacity-80">※相手視線表示（札は天地逆さま）</span>
-                    </div>
-                    <span id="op-count-display" class="text-xs text-red-300 font-bold">配置: 25枚</span>
-                </div>
-
-                <!-- 相手陣：左右ブロック横並び分割（中央に約3cmの大きな隙間） -->
-                <div class="flex items-center justify-between gap-4">
-                    <!-- 相手陣：左グループ (上段・中段・下段) -->
-                    <div class="flex-1 flex flex-col gap-2">
-                        <!-- 上段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">上段</span>
-                            <div id="op-top-left" class="lane-slot flex-1" data-slot="op-top-left"></div>
-                        </div>
-                        <!-- 中段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">中段</span>
-                            <div id="op-mid-left" class="lane-slot flex-1" data-slot="op-mid-left"></div>
-                        </div>
-                        <!-- 下段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">下段</span>
-                            <div id="op-bot-left" class="lane-slot flex-1" data-slot="op-bot-left"></div>
-                        </div>
-                    </div>
-
-                    <!-- 中央空白分離スペース (約3cm幅の公式隙間) -->
-                    <div class="w-10 sm:w-12 self-stretch flex flex-col items-center justify-center bg-black/20 rounded border-x border-white/10 py-2">
-                        <span class="vertical-text text-[10px] text-amber-200/50 tracking-widest font-bold">中央分離</span>
-                    </div>
-
-                    <!-- 相手陣：右グループ (上段・中段・下段) -->
-                    <div class="flex-1 flex flex-col gap-2">
-                        <!-- 上段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="op-top-right" class="lane-slot flex-1" data-slot="op-top-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">上段</span>
-                        </div>
-                        <!-- 中段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="op-mid-right" class="lane-slot flex-1" data-slot="op-mid-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">中段</span>
-                        </div>
-                        <!-- 下段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="op-bot-right" class="lane-slot flex-1" data-slot="op-bot-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">下段</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 中央 運命戦・境界線 (3cm幅スペース) -->
-            <div class="relative my-1 flex items-center justify-center">
-                <div class="w-full border-t-2 border-dashed border-amber-300/40 absolute"></div>
-                <span class="bg-stone-900 text-amber-300 text-[11px] px-4 py-0.5 rounded-full border border-amber-600/60 relative z-10 font-bold tracking-widest shadow-md">
-                    中央境界線 (3cm)
-                </span>
-            </div>
-
-            <!-- ================= 自陣 (Player Territory: 画面下部・紫/緑枠) ================= -->
-            <div class="bg-black/30 p-3 rounded-lg border-2 border-purple-900/50 shadow-inner">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="bg-purple-950 text-purple-200 text-xs px-2.5 py-0.5 rounded border border-purple-800 font-bold">
-                        自陣 (25枚)
-                    </span>
-                    <span id="player-count-display" class="text-xs font-bold text-emerald-300">配置: 25 / 25枚</span>
-                </div>
-
-                <!-- 自陣：左右ブロック横並び分割（中央に約3cmの大きな隙間） -->
-                <div class="flex items-center justify-between gap-4">
-                    <!-- 自陣：左グループ (上段・中段・下段) -->
-                    <div class="flex-1 flex flex-col gap-2">
-                        <!-- 上段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">上段</span>
-                            <div id="pl-top-left" class="lane-slot flex-1" data-slot="pl-top-left"></div>
-                        </div>
-                        <!-- 中段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">中段</span>
-                            <div id="pl-mid-left" class="lane-slot flex-1" data-slot="pl-mid-left"></div>
-                        </div>
-                        <!-- 下段 -->
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">下段</span>
-                            <div id="pl-bot-left" class="lane-slot flex-1" data-slot="pl-bot-left"></div>
-                        </div>
-                    </div>
-
-                    <!-- 中央空白分離スペース (約3cm幅の公式隙間) -->
-                    <div class="w-10 sm:w-12 self-stretch flex flex-col items-center justify-center bg-black/20 rounded border-x border-white/10 py-2">
-                        <span class="vertical-text text-[10px] text-amber-200/50 tracking-widest font-bold">中央分離</span>
-                    </div>
-
-                    <!-- 自陣：右グループ (上段・中段・下段) -->
-                    <div class="flex-1 flex flex-col gap-2">
-                        <!-- 上段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="pl-top-right" class="lane-slot flex-1" data-slot="pl-top-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">上段</span>
-                        </div>
-                        <!-- 中段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="pl-mid-right" class="lane-slot flex-1" data-slot="pl-mid-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">中段</span>
-                        </div>
-                        <!-- 下段 -->
-                        <div class="flex items-center gap-1.5">
-                            <div id="pl-bot-right" class="lane-slot flex-1" data-slot="pl-bot-right"></div>
-                            <span class="text-[10px] text-stone-300 font-bold w-7 shrink-0 text-center">下段</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- 手動配置モード用：持ち札/未配置カードプール -->
-        <div id="pool-container" class="w-full max-w-6xl min-w-[880px] bg-stone-900 border border-amber-800/50 p-3 rounded-lg shadow-xl hidden my-2">
-            <div class="flex items-center justify-between mb-2 pb-1 border-b border-stone-800">
-                <span class="text-xs font-bold text-amber-300 flex items-center gap-2">
-                    <i class="fa-solid fa-hand-holding-heart"></i> 手札プール（札を選択して盤面のレーンをタップ、またはドラッグして配置）
-                </span>
-                <div class="flex gap-2">
-                    <button id="btn-auto-fill-all" class="text-xs bg-amber-800 hover:bg-amber-700 text-amber-100 px-2.5 py-1 rounded border border-amber-600 transition">
-                        未配置札をすべて自動配置
-                    </button>
-                    <button id="btn-clear-all" class="text-xs bg-stone-800 hover:bg-stone-700 text-stone-300 px-2.5 py-1 rounded border border-stone-600 transition">
-                        すべて手札に戻す
-                    </button>
-                </div>
-            </div>
-            <div id="card-pool" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 min-h-[90px] border border-dashed border-stone-700 rounded bg-black/20">
-                <!-- 手札プールカードが挿入される -->
-            </div>
-        </div>
-    </main>
-
-    <!-- モーダル: 使い方・ルールガイド -->
-    <div id="modal-help" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-stone-900 border border-amber-700/60 p-6 rounded-xl max-w-lg w-full shadow-2xl relative">
-            <h3 class="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-book-open"></i> 競技かるた暗記トレーナーの使い方
-            </h3>
-            <ul class="space-y-3 text-xs sm:text-sm text-stone-300 leading-relaxed list-disc list-inside">
-                <li><strong>左右分離レイアウト</strong>：相手陣・自陣ともに「左側3段（上中下）」と「右側3段（上中下）」に完全左右分離し、中央に約3cmのスペースが空いています。</li>
-                <li><strong>相手陣の逆さま表示</strong>：競技仕様に基づき、相手陣の札は180度回転して天地逆さまに表示されます。</li>
-                <li><strong>札の移動方法（スマホ・PC対応）</strong>：
-                    <ul class="pl-5 space-y-1 text-stone-400 list-circle">
-                        <li><strong>選択タップ方式</strong>：札をタップ（オレンジ枠）→配置したいレーンをタップ。</li>
-                        <li><strong>ドラッグ＆ドロップ</strong>：PCのマウスドラッグ、またはスマホのタッチ長押しドラッグに対応。</li>
-                    </ul>
-                </li>
-                <li><strong>暗記スタート</strong>：「暗記スタート」を押すと50枚全札が裏返り、15分タイマーが開始します。裏返った札をタップすると3Dフリップで表が見えます。</li>
-            </ul>
-            <button id="btn-close-help" class="mt-6 w-full py-2 bg-amber-700 hover:bg-amber-600 text-white font-bold rounded transition text-sm">
-                閉じる
-            </button>
-        </div>
+      </div>
+      <div class="row-grid" id="enemy-row-0"></div>
+      <div class="row-grid" id="enemy-row-1"></div>
+      <div class="row-grid" id="enemy-row-2"></div>
     </div>
 
-    <script>
-        // 百人一首 全100首 データセット
-        const HYAKUNIN_ISSHU = [
-            { id: 1, kami: "あきのたの かかりほのいほの とまをあらみ", shimo: "わがころもては つゆにぬれつつ", kimari: "あきの" },
-            { id: 2, kami: "はるすぎて なつくにけらし しろたへの", shimo: "ころもほすてふ あまのかぐやま", kimari: "はるす" },
-            { id: 3, kami: "あしびきの やまどりのおの しだりのおの", shimo: "ながながしよを ひとりかもねむ", kimari: "あしの" },
-            { id: 4, kami: "たごのうらに うちいでてみれば しろたへの", shimo: "ふじのたかねに ゆきはふりつつ", kimari: "たご" },
-            { id: 5, kami: "おくやまに もみぢふみわけ なくなかの", shimo: "しかのねきくとき ぞあきはかなしき", kimari: "おく" },
-            { id: 6, kami: "かささぎの わたせるはしに おくしもはの", shimo: "しろきをみれば よぞふけにける", kimari: "かさ" },
-            { id: 7, kami: "あまのはら ふりさけみれば かすがなる", shimo: "みかさのやまに いたいだしつき", kimari: "あまの" },
-            { id: 8, kami: "わがのりは ふなでをすとの たびにては", shimo: "しらなみのよる いそまこともなし", kimari: "わがの" },
-            { id: 9, kami: "はなのいろは うつりにけりな いたづらに", shimo: "わがみせにふる ながめせしまに", kimari: "はなの" },
-            { id: 10, kami: "これやこの ゆくもかへるも わかれては", shimo: "しるもしらぬも あふさかのせき", kimari: "これ" },
-            { id: 11, kami: "わたのはら やそしまかけて こぎいでぬと", shimo: "ひとにはつけよ あまのつりぶね", kimari: "わたのはら や" },
-            { id: 12, kami: "あまつかぜ くものかよひぢ ふきとぢよ", shimo: "をとめのすがた しばしとどめむ", kimari: "あまつ" },
-            { id: 13, kami: "つくばねの みねよりおつる みなのからの", shimo: "こひぞつもりて ふちとなりぬる", kimari: "つく" },
-            { id: 14, kami: "みちのくの しのぶもぢずり たれゆゑに", shimo: "みだれそめにし われならなくに", kimari: "みち" },
-            { id: 15, kami: "きみがため はるののにいでて わかなつむ", shimo: "わがころもでには ゆきはふりつつ", kimari: "きみがため は" },
-            { id: 16, kami: "たちわかれ いなばのやまの みねにふる", shimo: "まつとしきかば いまかへりこむ", kimari: "たち" },
-            { id: 17, kami: "ちはやぶる かみよもきかず たつたがは", shimo: "からくれなゐに みづくくるとは", kimari: "ちは" },
-            { id: 18, kami: "すみのえの きしによるなみ よるのすへ", shimo: "ゆめのかよひぢ ひとめよくらむ", kimari: "すみ" },
-            { id: 19, kami: "なにわがた みじかきあしの ふしのまも", shimo: "あはでこのよを すぐしてよとや", kimari: "なにわが" },
-            { id: 20, kami: "わびぬれば いまはたたじな なにはなる", shimo: "みをつくしても あはむとぞおもふ", kimari: "わび" },
-            { id: 21, kami: "いまこむと いひしばかりに ながつきの", shimo: "ありあけのつきを まちいでつるかな", kimari: "いまこ" },
-            { id: 22, kami: "ふくからに あきのくさきの しをむれば", shimo: "むべやまかぜを あらしといふらむ", kimari: "ふく" },
-            { id: 23, kami: "つきみれば ちぢにものこそ かなしけれ", shimo: "わがみひとつの あきにはあらねど", kimari: "つき" },
-            { id: 24, kami: "このたびは ぬさもとりあへず たむけやま", shimo: "もみぢのにしき かみのまにまに", kimari: "この" },
-            { id: 25, kami: "なにしおはば れんぜんかづら もみぢばの", shimo: "なほあまりある あきのけしきか", kimari: "なにし" },
-            { id: 26, kami: "をぐらのやまの みねのもみぢば", shimo: "こころあらむ ひとにもみせむ", kimari: "をぐ" },
-            { id: 27, kami: "みかのはら わきてながれる いづみかわ", shimo: "いつみきとてか こひしかるらむ", kimari: "みかの" },
-            { id: 28, kami: "やまざとは ふゆぞさびしさ まさりける", shimo: "ひとのかれぬ とおもふおもへば", kimari: "やまざ" },
-            { id: 29, kami: "こころあてに 折らばや折らむ はつしもに", shimo: "おきまどはせる しらぎくのはな", kimari: "こころあ" },
-            { id: 30, kami: "ありあけの つれなくみえし わかれより", shimo: "あかくつきの あかつきばかり", kimari: "ありあ" },
-            { id: 31, kami: "あさぼらけ ありあけのつきと みるまでに", shimo: "よしののさとに ふれるしらゆき", kimari: "あさぼらけ あ" },
-            { id: 32, kami: "やまがわに かぜのかけたる しがらみは", shimo: "ながれもあへぬ もみぢなりけり", kimari: "やまが" },
-            { id: 33, kami: "ひさかたの ひかりのどけき はるのひに", shimo: "しづこころなく はなのちるらむ", kimari: "ひさ" },
-            { id: 34, kami: "たれをかも しるひとにせむ たかさごの", shimo: "まつもむかしの ともならなくに", kimari: "たれ" },
-            { id: 35, kami: "ひとはいさ こころもしらず ふるさとは", shimo: "はなぞむかしの かのににおひける", kimari: "ひとは" },
-            { id: 36, kami: "なつのよは まだよひながら あけぬるを", shimo: "くものいづこに つきかくるらむ", kimari: "なつの" },
-            { id: 37, kami: "しらゆきに はねのうへなる しらぎくの", shimo: "かいまみるべき はなのいろかな", kimari: "しら" },
-            { id: 38, kami: "わすらるる みをばおもはず ちかひつる", shimo: "ひとのいのちの おしくもあるかな", kimari: "わすら" },
-            { id: 39, kami: "あさみどり 糸よりかけて 白露の", shimo: "たまにもぬける はるのののさと", kimari: "あさみ" },
-            { id: 40, kami: "しのぶれど いろにいでにけり わがこひは", shimo: "ものやおもふと ひとの問ふまで", kimari: "しの" },
-            { id: 41, kami: "こひすちょう わがなはままだ たつたがは", shimo: "ひとしれずこそ おもひそめしか", kimari: "こひ" },
-            { id: 42, kami: "ちぎりきな かたみにそでを しぼりつつ", shimo: "すえのまつやま なみこさじとは", kimari: "ちぎりき" },
-            { id: 43, kami: "あいみての のちのこころに くらぶれば", shimo: "むかしはものを おもはざりけり", kimari: "あい" },
-            { id: 44, kami: "あうことの たえてしなくは なかにの", shimo: "ひとをもみをも うらみざらまし", kimari: "あふこ" },
-            { id: 45, kami: "あわれとも いうべきひとは おもほえで", shimo: "みをつくしてや こひわたるべき", kimari: "あはれ" },
-            { id: 46, kami: "ゆらのとを わたるふなびと かじをたえ", shimo: "ゆくへもしらぬ こひのみちかな", kimari: "ゆら" },
-            { id: 47, kami: "八重むぐら しげれるやどの さびしきに", shimo: "ひとこそみえね あきはきにけり", kimari: "やえ" },
-            { id: 48, kami: "かぜをいたみ いわうつなみの おのれのみ", shimo: "くだけてものを おもふころかな", kimari: "かぜを" },
-            { id: 49, kami: "みかきもり 衛士のたくひの よるはもえて", shimo: "ひるはきえつつ ものをこそおもへ", kimari: "みかき" },
-            { id: 50, kami: "きみがため おしからざりし いのちさえ", shimo: "ながくもがなと おもひけるかな", kimari: "きみがため を" }
-        ];
+    <div class="center-divider"></div>
 
-        // 12箇所の公式レーンスロットキー（相手6 / 自陣6）
-        const ALL_LANE_KEYS = [
-            'op-top-left', 'op-mid-left', 'op-bot-left',
-            'op-top-right', 'op-mid-right', 'op-bot-right',
-            'pl-top-left', 'pl-mid-left', 'pl-bot-left',
-            'pl-top-right', 'pl-mid-right', 'pl-bot-right'
-        ];
+    <!-- 自陣 -->
+    <div class="field-section self-field">
+      <div class="section-title">
+        <span>自陣</span>
+        <div class="align-btns">
+          <button onclick="alignRow('self', 0, 'left')">上段左寄</button>
+          <button onclick="alignRow('self', 0, 'right')">上段右寄</button>
+          <button onclick="alignRow('self', 1, 'left')">中段左寄</button>
+          <button onclick="alignRow('self', 1, 'right')">中段右寄</button>
+          <button onclick="alignRow('self', 2, 'left')">下段左寄</button>
+          <button onclick="alignRow('self', 2, 'right')">下段右寄</button>
+        </div>
+      </div>
+      <div class="row-grid" id="self-row-0"></div>
+      <div class="row-grid" id="self-row-1"></div>
+      <div class="row-grid" id="self-row-2"></div>
+    </div>
+  </div>
 
-        // アプリケーション状態
-        let boardState = {}; // laneKey -> [cardObj]
-        let cardPool = [];   // 未配置の手札プール
-        let selectedCardId = null; // 2段階タップ選択中のカードID
-        let isPlacementMode = false;
-        let isFlippedAll = false;
-        let displayMode = 'shimo-only';
+  <!-- 下部：自陣配置用コントロール -->
+  <div class="controls-bottom">
+    <div class="deck-area">
+      <div class="deck-card" id="current-deck-card">束</div>
+      <div class="deck-info">
+        <div>自陣山札: <span id="deck-count">25</span> 枚</div>
+        <div style="font-size: 0.75rem; color: #bbb;">マス目をタップして配置</div>
+      </div>
+    </div>
+    <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
+  </div>
 
-        // 暗記タイマー状態
-        let timerSeconds = 15 * 60;
-        let timerInterval = null;
-        let isTimerRunning = false;
+  <script>
+    // 百人一首 全100首 完全データ
+    const HYAKUNIN_ISSHU = [
+      { id: 1, kami: "あきのたの", shimo: "わかころもてはつゆにぬれつつ" },
+      { id: 2, kami: "はるすきて", shimo: "ころもほすてふあまのかくやま" },
+      { id: 3, kami: "あしひきの", shimo: "ながながしよをひとりかもねむ" },
+      { id: 4, kami: "たこのうらに", shimo: "ふしのたかねにゆきはふりつつ" },
+      { id: 5, kami: "おくやまに", shimo: "こえきくときそあきはかなしき" },
+      { id: 6, kami: "かささきの", shimo: "しろきをみれはそそふけにける" },
+      { id: 7, kami: "あまのはら", shimo: "ふりさけみれはかすかになるの" },
+      { id: 8, kami: "わかいほは", shimo: "みやこのたつみしかそすむとおう" },
+      { id: 9, kami: "はなさのくは", shimo: "わかみなからになをおいにはて" },
+      { id: 10, kami: "これやこの", shimo: "しるもしらぬもあふさかのせき" },
+      { id: 11, kami: "わたのはらや", shimo: "くもゐにまかふおきつしらなみ" },
+      { id: 12, kami: "あまつかせ", shimo: "をとめのすかたしばしとどめむ" },
+      { id: 13, kami: "つくはねの", shimo: "みみたのふちとなりにけるかな" },
+      { id: 14, kami: "みちのくの", shimo: "みたれるのちのわたしはならむ" },
+      { id: 15, kami: "きみかためは", shimo: "わかころもてにゆきはふりつつ" },
+      { id: 16, kami: "たちわかれ", shimo: "まつとしきかばいまかへりこむ" },
+      { id: 17, kami: "ちはやふる", shimo: "からくれなゐにみづくくるとは" },
+      { id: 18, kami: "すみのえの", shimo: "ゆめのかよいじひとはよくれど" },
+      { id: 19, kami: "なにわかた", shimo: "みをつくしてもあはむとぞおもう" },
+      { id: 20, kami: "わびぬれば", shimo: "あはでこのよをすぐしてよとや" },
+      { id: 21, kami: "いまこむと", shimo: "ありあけのつきをまちいでつるかな" },
+      { id: 22, kami: "ふくからに", shimo: "むべやまかぜをあらしというらむ" },
+      { id: 23, kami: "つきみれば", shimo: "わがみひとつのあきにはあらねど" },
+      { id: 24, kami: "このたびは", shimo: "もみじのにしきかみのまにまに" },
+      { id: 25, kami: "なにわえの", shimo: "みじかきあしのふしのまの" },
+      { id: 26, kami: "小倉山", shimo: "いまひとたびのよくもがな" },
+      { id: 27, kami: "みかのはら", shimo: "いつみきとてかこいしかるらむ" },
+      { id: 28, kami: "やまざとは", shimo: "ひとめもくさもかれぬとおもえば" },
+      { id: 29, kami: "心あてに", shimo: "おきまどわせるしらぎくのはな" },
+      { id: 30, kami: "ありあけの", shimo: "あかずわかれしあかつきばかり" },
+      { id: 31, kami: "あさぼらけあ", shimo: "よしのにふれるゆきかとぞみる" },
+      { id: 32, kami: "やまがわに", shimo: "ながれもあえぬもみじなりけり" },
+      { id: 33, kami: "ひさかたの", shimo: "しずころもなくてはなさくらむ" },
+      { id: 34, kami: "たれをかも", shimo: "たかさごのおのまつもむかしの" },
+      { id: 35, kami: "ひとはいさ", shimo: "はなぞむかしのかににおいける" },
+      { id: 36, kami: "夏の夜は", shimo: "くものいずこにつきやどるらむ" },
+      { id: 37, kami: "しらゆきに", shimo: "ふりしきりたるあきののべかな" },
+      { id: 38, kami: "わすらるる", shimo: "ひとのいのちの惜しくもあるかな" },
+      { id: 39, kami: "あさじうの", shimo: "あまりてなどかひとのこいしき" },
+      { id: 40, kami: "しのぶれど", shimo: "ものやおもうとひとのとうまで" },
+      { id: 41, kami: "こいすちょう", shimo: "わがなはまだきたちにけるかな" },
+      { id: 42, kami: "ちぎりきな", shimo: "すえのまつちなくなみこさじとは" },
+      { id: 43, kami: "あいみての", shimo: "むかしはものを思わざりけり" },
+      { id: 44, kami: "おうことも", shimo: "ひとをみをつらさのおもうかな" },
+      { id: 45, kami: "あわれとも", shimo: "みをつくしてやみをはてぬらむ" },
+      { id: 46, kami: "ゆらのとを", shimo: "ゆくへも知らぬこいのみちかな" },
+      { id: 47, kami: "八重むぐら", shimo: "ひとこそ見えねあきはきにけり" },
+      { id: 48, kami: "風をいたみ", shimo: "くだけてものを思ふころかな" },
+      { id: 49, kami: "みかきもり", shimo: "昼は消えつつものをこそ思え" },
+      { id: 50, kami: "君がため惜", shimo: "ながくもがなと思いけるかな" },
+      { id: 51, kami: "かくとだに", shimo: "さしも草のさしも思いじ" },
+      { id: 52, kami: "あけぬれば", shimo: "なおうらめしきあさぼらけかな" },
+      { id: 53, kami: "なげきつつ", shimo: "いかにひさしきものとかはしる" },
+      { id: 54, kami: "忘れじの", shimo: "きょうを限りのいのちともがな" },
+      { id: 55, kami: "滝の音は", shimo: "ながれ絶えても名こそ流れれ" },
+      { id: 56, kami: "あらざらむ", shimo: "いまひとたびのあうこともがな" },
+      { id: 57, kami: "めぐりあいて", shimo: "雲がくれにし夜半の月かな" },
+      { id: 58, kami: "有馬山", shimo: "いでそよ人を忘れやはする" },
+      { id: 59, kami: "やすらわで", shimo: "かたぶくまでの月を見しかな" },
+      { id: 60, kami: "大江山", shimo: "まだふみも見ずあまのはしだて" },
+      { id: 61, kami: "いにしえの", shimo: "きょう九重ににおいぬるかな" },
+      { id: 62, kami: "夜をこめて", shimo: "よに逢坂の関はゆるさじ" },
+      { id: 63, kami: "いまはただ", shimo: "人づてならで逢うよしもがな" },
+      { id: 64, kami: "朝ぼらけ字", shimo: "あらでたてるは朝のしらも" },
+      { id: 65, kami: "恨みわび", shimo: "恋に朽ちなむ名こそ惜しけれ" },
+      { id: 66, kami: "もろともに", shimo: "花よりほかに知る人もなし" },
+      { id: 67, kami: "春の夜の", shimo: "かいなく立ちにし名こそ惜しけれ" },
+      { id: 68, kami: "心にも", shimo: "おもい外なる夜半の月かな" },
+      { id: 69, kami: "あらしふく", shimo: "たつたの山のあきのもみじば" },
+      { id: 70, kami: "さびしさに", shimo: "いずこも同じ秋の夕ぐれ" },
+      { id: 71, kami: "夕されば", shimo: "あしのまろやに秋風ぞふく" },
+      { id: 72, kami: "音にきく", shimo: "かけじやそでのぬれもこそすれ" },
+      { id: 73, kami: "高砂の", shimo: "とやまのさくら咲きにけり" },
+      { id: 74, kami: "うかりける", shimo: "はつせのやまのおろしよ" },
+      { id: 75, kami: "ちぎりおきし", shimo: "あわれことしのあきもいぬめり" },
+      { id: 76, kami: "わたの原こ", shimo: "雲ゐにまとうおきつしらなみ" },
+      { id: 77, kami: "瀬をはやみ", shimo: "われても末に逢わむとぞ思う" },
+      { id: 78, kami: "淡路島", shimo: "いく夜かくけぬすまのせきもり" },
+      { id: 79, kami: "秋かぜに", shimo: "もれづる月の影のさやけさ" },
+      { id: 80, kami: "長からむ", shimo: "みだれて今朝はものをこそ思え" },
+      { id: 81, kami: "ほととぎす", shimo: "ただ有明の月ぞのこれる" },
+      { id: 82, kami: "思いわび", shimo: "いくよさめぬるものゆえに" },
+      { id: 83, kami: "世の中よ", shimo: "山のおくにも訪ねてぞ住む" },
+      { id: 84, kami: "ながらえば", shimo: "いまこのごろやしのばれむ" },
+      { id: 85, kami: "夜もすがら", shimo: "ねやのひますだももみじ葉" },
+      { id: 86, kami: "なげけとて", shimo: "かこちがほなるわがなみだかな" },
+      { id: 87, kami: "むらさめの", shimo: "まだくものこるまきのいたや" },
+      { id: 88, kami: "なにわえの", shimo: "みじかきあしのふしのまの" },
+      { id: 89, kami: "玉の緒よ", shimo: "ながえに絶えなば絶えね" },
+      { id: 90, kami: "見せばやな", shimo: "おじまのあまのそでだにも" },
+      { id: 91, kami: "きりぎりす", shimo: "さもよさむるさむしろの" },
+      { id: 92, kami: "わが袖は", shimo: "ひとにしられでかわきもせず" },
+      { id: 93, kami: "世の中は", shimo: "あまのおのふねつなでかなしも" },
+      { id: 94, kami: "みよしのの", shimo: "ふるさと寒く衣うつなり" },
+      { id: 95, kami: "おけやくも", shimo: "つらき人にはあらじと思えば" },
+      { id: 96, kami: "花さそう", shimo: "ふりゆくものは我が身なりけり" },
+      { id: 97, kami: "こぬ人を", shimo: "やくやもしおの身もこがれつつ" },
+      { id: 98, kami: "風そよぐ", shimo: "みそぎぞ夏のしるしなりける" },
+      { id: 99, kami: "ひとも惜し", shimo: "よもおしからむあらしの風" },
+      { id: 100, kami: "ももしきや", shimo: "なおあまりあるむかしなりけり" }
+    ];
 
-        // 初期化
-        function initApp() {
-            setupFullRandomBoard();
-            setupEventListeners();
+    let enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
+    let selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
+    let selfDeck = [];
+    let currentCard = null;
+    let isMemorizeMode = false;
+
+    function initGame() {
+      isMemorizeMode = false;
+      document.getElementById('start-btn').textContent = "暗記スタート (裏返す)";
+
+      // 全100首からシャッフルして50枚を抽出
+      const shuffled = [...HYAKUNIN_ISSHU].sort(() => Math.random() - 0.5);
+      const enemyCards = shuffled.slice(0, 25);
+      selfDeck = shuffled.slice(25, 50);
+
+      enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
+      selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
+
+      // 敵陣25枚をランダム配置
+      let placed = 0;
+      while (placed < 25) {
+        let r = Math.floor(Math.random() * 3);
+        let c = Math.floor(Math.random() * 15);
+        if (!enemyBoard[r][c]) {
+          enemyBoard[r][c] = { ...enemyCards[placed], isFaceDown: false };
+          placed++;
         }
+      }
 
-        // おまかせ全自動配札（相手25枚、自陣25枚）
-        function setupFullRandomBoard() {
-            boardState = {};
-            cardPool = [];
-            selectedCardId = null;
-            isPlacementMode = false;
-            isFlippedAll = false;
+      popDeckCard();
+      renderAll();
+    }
 
-            const shuffled = [...HYAKUNIN_ISSHU].sort(() => 0.5 - Math.random());
-            const selected50 = shuffled.slice(0, 50);
+    function popDeckCard() {
+      if (selfDeck.length > 0) {
+        currentCard = selfDeck.pop();
+        document.getElementById('current-deck-card').textContent = currentCard.kami;
+      } else {
+        currentCard = null;
+        document.getElementById('current-deck-card').textContent = "完了";
+      }
+      document.getElementById('deck-count').textContent = selfDeck.length + (currentCard ? 1 : 0);
+    }
 
-            const opCards = selected50.slice(0, 25);
-            const plCards = selected50.slice(25, 50);
+    function renderAll() {
+      renderGrid('enemy', enemyBoard);
+      renderGrid('self', selfBoard);
+    }
 
-            distributeCardsToLanes(opCards, ALL_LANE_KEYS.filter(k => k.startsWith('op-')));
-            distributeCardsToLanes(plCards, ALL_LANE_KEYS.filter(k => k.startsWith('pl-')));
+    function renderGrid(side, boardData) {
+      for (let r = 0; r < 3; r++) {
+        const rowEl = document.getElementById(`${side}-row-${r}`);
+        rowEl.innerHTML = '';
+        for (let c = 0; c < 15; c++) {
+          const slot = document.createElement('div');
+          slot.className = 'slot';
+          slot.onclick = () => handleSlotClick(side, r, c);
 
-            updateUI();
+          const cardData = boardData[r][c];
+          if (cardData) {
+            const card = document.createElement('div');
+            card.className = `card ${cardData.isFaceDown ? 'back' : ''}`;
+
+            const text = document.createElement('div');
+            text.className = 'card-text';
+            text.textContent = cardData.shimo;
+            card.appendChild(text);
+
+            slot.appendChild(card);
+          }
+          rowEl.appendChild(slot);
         }
+      }
+    }
 
-        // カードを複数レーンへ均等・ランダム分配
-        function distributeCardsToLanes(cards, lanes) {
-            cards.forEach(card => {
-                const randomLane = lanes[Math.floor(Math.random() * lanes.length)];
-                if (!boardState[randomLane]) boardState[randomLane] = [];
-                boardState[randomLane].push({ ...card, isFlipped: false });
-            });
+    function handleSlotClick(side, r, c) {
+      const targetBoard = side === 'enemy' ? enemyBoard : selfBoard;
+
+      if (isMemorizeMode) {
+        if (targetBoard[r][c]) {
+          targetBoard[r][c].isFaceDown = !targetBoard[r][c].isFaceDown;
+          renderAll();
         }
+        return;
+      }
 
-        // 手動配置モード（全札を一度手札プールに移動）
-        function startPlacementMode() {
-            isPlacementMode = true;
-            isFlippedAll = false;
-            selectedCardId = null;
-
-            // 全レーンを空にし、50枚を手札プールへ集約
-            const shuffled = [...HYAKUNIN_ISSHU].sort(() => 0.5 - Math.random());
-            cardPool = shuffled.slice(0, 50).map(c => ({ ...c, isFlipped: false }));
-            boardState = {};
-
-            updateUI();
+      if (side === 'self') {
+        if (!targetBoard[r][c] && currentCard) {
+          targetBoard[r][c] = { ...currentCard, isFaceDown: false };
+          popDeckCard();
+          renderAll();
+          updateStatus("札を配置しました");
         }
+      }
+    }
 
-        // 全体UIレンダリング
-        function updateUI() {
-            let totalPlCount = 0;
-            let totalOpCount = 0;
+    function alignRow(side, rowIdx, direction) {
+      const board = side === 'enemy' ? enemyBoard : selfBoard;
+      const row = board[rowIdx];
+      
+      const cards = row.filter(c => c !== null);
+      const newRow = Array(15).fill(null);
 
-            // 12個の各レーンに札を描画
-            ALL_LANE_KEYS.forEach(laneKey => {
-                const laneEl = document.getElementById(laneKey);
-                laneEl.innerHTML = '';
-
-                const cardsInLane = boardState[laneKey] || [];
-                const isOpponent = laneKey.startsWith('op-');
-
-                if (isOpponent) totalOpCount += cardsInLane.length;
-                else totalPlCount += cardsInLane.length;
-
-                // 2段階選択時のハイライト表示
-                if (selectedCardId) {
-                    laneEl.classList.add('selected-target');
-                } else {
-                    laneEl.classList.remove('selected-target');
-                }
-
-                cardsInLane.forEach((card, index) => {
-                    const cardDOM = createCardDOM(card, isOpponent, index, laneKey);
-                    laneEl.appendChild(cardDOM);
-                });
-            });
-
-            // 手札プールエリアの表示・描画
-            const poolEl = document.getElementById('card-pool');
-            const poolContainer = document.getElementById('pool-container');
-            const statusText = document.getElementById('placement-status');
-
-            if (isPlacementMode || cardPool.length > 0) {
-                poolContainer.classList.remove('hidden');
-                statusText.classList.remove('hidden');
-                poolEl.innerHTML = '';
-
-                cardPool.forEach(card => {
-                    const poolCardDOM = createPoolCardDOM(card);
-                    poolEl.appendChild(poolCardDOM);
-                });
-            } else {
-                poolContainer.classList.add('hidden');
-                statusText.classList.add('hidden');
-            }
-
-            // 枚数カウント更新
-            document.getElementById('player-count-display').textContent = `配置: ${totalPlCount} / 25枚`;
-            document.getElementById('op-count-display').textContent = `配置: ${totalOpCount} / 25枚`;
-
-            updateFlipButtonText();
+      if (direction === 'left') {
+        for (let i = 0; i < cards.length; i++) {
+          newRow[i] = cards[i];
         }
-
-        // 盤面上の札DOM作成（重ね並べ・フリップ・ドラッグ＆タップ対応）
-        function createCardDOM(card, isOpponent, index, laneKey) {
-            const wrapper = document.createElement('div');
-            const isSelected = selectedCardId === card.id;
-
-            wrapper.className = `perspective-1000 h-20 sm:h-24 w-14 sm:w-16 card-overlapping cursor-pointer ${card.isFlipped ? 'card-flipped' : ''} ${isOpponent ? 'opponent-card' : ''} ${isSelected ? 'card-selected' : ''}`;
-            wrapper.style.zIndex = index + 1;
-            wrapper.setAttribute('draggable', 'true');
-            wrapper.dataset.cardId = card.id;
-            wrapper.dataset.sourceLane = laneKey;
-
-            let cardContentHtml = '';
-            if (displayMode === 'kimari-shimo') {
-                cardContentHtml = `
-                    <div class="text-[8px] text-emerald-800 font-bold border-b border-emerald-200 text-center pb-0.5">
-                        【${card.kimari}】
-                    </div>
-                    <div class="vertical-text text-[11px] sm:text-xs font-bold text-stone-900 leading-tight mx-auto flex items-center justify-center">
-                        ${card.shimo}
-                    </div>
-                `;
-            } else if (displayMode === 'shimo-only') {
-                cardContentHtml = `
-                    <div class="vertical-text text-[11px] sm:text-xs font-bold text-stone-900 leading-tight mx-auto flex items-center justify-center pt-1">
-                        ${card.shimo}
-                    </div>
-                `;
-            } else {
-                cardContentHtml = `
-                    <div class="text-[7px] text-stone-500 truncate mb-0.5">${card.kami}</div>
-                    <div class="vertical-text text-[10px] sm:text-[11px] font-bold text-stone-900 leading-tight mx-auto flex items-center justify-center">
-                        ${card.shimo}
-                    </div>
-                `;
-            }
-
-            wrapper.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-front flex flex-col justify-between">
-                        <div class="card-front-content h-full flex flex-col justify-between">
-                            ${cardContentHtml}
-                        </div>
-                    </div>
-                    <div class="card-back">
-                        <i class="fa-solid fa-leaf text-red-900/40 text-xs"></i>
-                    </div>
-                </div>
-            `;
-
-            // カードクリック/タップイベント（暗記時のひっくり返し または 移動選択）
-            wrapper.addEventListener('click', (e) => {
-                e.stopPropagation();
-
-                if (isFlippedAll) {
-                    // 暗記中：タップで表裏ひっくり返し
-                    card.isFlipped = !card.isFlipped;
-                    updateUI();
-                } else {
-                    // 通常・配置中：2段階選択（選択/解除）
-                    if (selectedCardId === card.id) {
-                        selectedCardId = null; // 選択解除
-                    } else {
-                        selectedCardId = card.id; // 新たに選択
-                    }
-                    updateUI();
-                }
-            });
-
-            // HTML5 ドラッグ開始
-            wrapper.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    cardId: card.id,
-                    fromLane: laneKey
-                }));
-            });
-
-            return wrapper;
+      } else {
+        for (let i = 0; i < cards.length; i++) {
+          newRow[15 - cards.length + i] = cards[i];
         }
+      }
 
-        // 手札プール内カードDOM作成
-        function createPoolCardDOM(card) {
-            const el = document.createElement('div');
-            const isSelected = selectedCardId === card.id;
+      board[rowIdx] = newRow;
+      renderAll();
+    }
 
-            el.className = `h-20 w-14 bg-fdfbf7 border-2 border-emerald-800 rounded p-1 flex flex-col justify-between cursor-pointer hover:scale-105 transition shadow ${isSelected ? 'ring-4 ring-amber-500 scale-105' : ''}`;
-            el.setAttribute('draggable', 'true');
-            el.dataset.cardId = card.id;
+    function autoPlaceSelf() {
+      if (isMemorizeMode) return;
+      
+      let remainingCards = [];
+      if (currentCard) remainingCards.push(currentCard);
+      remainingCards = remainingCards.concat(selfDeck);
+      selfDeck = [];
+      currentCard = null;
 
-            el.innerHTML = `
-                <div class="text-[8px] text-emerald-800 font-bold text-center">【${card.kimari}】</div>
-                <div class="vertical-text text-[11px] font-bold text-stone-900 mx-auto">${card.shimo}</div>
-            `;
-
-            // タップで選択
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectedCardId = isSelected ? null : card.id;
-                updateUI();
-            });
-
-            // ドラッグ開始
-            el.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    cardId: card.id,
-                    fromPool: true
-                }));
-            });
-
-            return el;
+      let emptySlots = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 15; c++) {
+          if (!selfBoard[r][c]) emptySlots.push({ r, c });
         }
+      }
 
-        // イベントリスナー設定
-        function setupEventListeners() {
-            // 各レーンスロットに対するドラッグ＆ドロップとタップ配置
-            ALL_LANE_KEYS.forEach(laneKey => {
-                const laneEl = document.getElementById(laneKey);
-
-                laneEl.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    laneEl.classList.add('drag-over');
-                });
-
-                laneEl.addEventListener('dragleave', () => {
-                    laneEl.classList.remove('drag-over');
-                });
-
-                laneEl.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    laneEl.classList.remove('drag-over');
-                    const dataStr = e.dataTransfer.getData('text/plain');
-                    if (!dataStr) return;
-
-                    const data = JSON.parse(dataStr);
-                    moveCardToLane(data.cardId, laneKey, data.fromLane, data.fromPool);
-                });
-
-                // レーンタップ時（選択された札があれば移動）
-                laneEl.addEventListener('click', () => {
-                    if (selectedCardId) {
-                        moveCardToLane(selectedCardId, laneKey);
-                        selectedCardId = null;
-                    }
-                });
-            });
-
-            // プールエリアへのドロップ（札を手札に戻す）
-            const poolEl = document.getElementById('card-pool');
-            poolEl.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                poolEl.classList.add('bg-amber-900/20');
-            });
-
-            poolEl.addEventListener('dragleave', () => {
-                poolEl.classList.remove('bg-amber-900/20');
-            });
-
-            poolEl.addEventListener('drop', (e) => {
-                e.preventDefault();
-                poolEl.classList.remove('bg-amber-900/20');
-                const dataStr = e.dataTransfer.getData('text/plain');
-                if (!dataStr) return;
-
-                const data = JSON.parse(dataStr);
-                if (data.fromLane) {
-                    returnCardToPool(data.cardId, data.fromLane);
-                }
-            });
-
-            // 手動配置モードボタン
-            document.getElementById('btn-mode-placement').addEventListener('click', () => {
-                startPlacementMode();
-            });
-
-            // おまかせ配札ボタン
-            document.getElementById('btn-reshuffle').addEventListener('click', () => {
-                if (confirm("盤面をリセットしておまかせ自動配札しますか？")) {
-                    resetTimer();
-                    setupFullRandomBoard();
-                }
-            });
-
-            // 全枚数自動埋めボタン
-            document.getElementById('btn-auto-fill-all').addEventListener('click', () => {
-                if (cardPool.length === 0) return;
-                
-                const playerLanes = ALL_LANE_KEYS.filter(k => k.startsWith('pl-'));
-                const opLanes = ALL_LANE_KEYS.filter(k => k.startsWith('op-'));
-
-                [...cardPool].forEach(card => {
-                    // 自陣優先で埋め、満たされたら相手陣
-                    const targetLanes = playerLanes;
-                    const randomLane = targetLanes[Math.floor(Math.random() * targetLanes.length)];
-                    moveCardToLane(card.id, randomLane, null, true);
-                });
-
-                isPlacementMode = false;
-                updateUI();
-            });
-
-            // 全札を手札に戻すボタン
-            document.getElementById('btn-clear-all').addEventListener('click', () => {
-                ALL_LANE_KEYS.forEach(laneKey => {
-                    const cards = boardState[laneKey] || [];
-                    [...cards].forEach(card => returnCardToPool(card.id, laneKey));
-                });
-                isPlacementMode = true;
-                updateUI();
-            });
-
-            // 暗記スタート/全裏返しボタン
-            document.getElementById('btn-flip-all').addEventListener('click', () => {
-                isFlippedAll = !isFlippedAll;
-                ALL_LANE_KEYS.forEach(key => {
-                    (boardState[key] || []).forEach(card => card.isFlipped = isFlippedAll);
-                });
-                updateFlipButtonText();
-                updateUI();
-
-                if (isFlippedAll && !isTimerRunning) {
-                    startTimer();
-                }
-            });
-
-            // 表示形式切り替えラジオボタン
-            document.querySelectorAll('input[name="display-mode"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    displayMode = e.target.value;
-                    updateUI();
-                });
-            });
-
-            // 暗記タイマー操作
-            document.getElementById('btn-timer-toggle').addEventListener('click', toggleTimer);
-            document.getElementById('btn-timer-reset').addEventListener('click', resetTimer);
-
-            // モーダル操作
-            document.getElementById('btn-help').addEventListener('click', () => {
-                document.getElementById('modal-help').classList.remove('hidden');
-            });
-            document.getElementById('btn-close-help').addEventListener('click', () => {
-                document.getElementById('modal-help').classList.add('hidden');
-            });
+      emptySlots.sort(() => Math.random() - 0.5);
+      remainingCards.forEach((card, idx) => {
+        if (emptySlots[idx]) {
+          const { r, c } = emptySlots[idx];
+          selfBoard[r][c] = { ...card, isFaceDown: false };
         }
+      });
 
-        // 札を指定レーンへ移動処理
-        function moveCardToLane(cardId, targetLaneKey, sourceLaneKey = null, isFromPool = false) {
-            let cardToMove = null;
+      popDeckCard();
+      renderAll();
+      updateStatus("自陣を自動配置しました");
+    }
 
-            // 移動元特定処理
-            if (isFromPool || cardPool.some(c => c.id === cardId)) {
-                const idx = cardPool.findIndex(c => c.id === cardId);
-                if (idx !== -1) {
-                    cardToMove = cardPool.splice(idx, 1)[0];
-                }
-            } else {
-                // 盤面上の他のレーンから検索して取り出す
-                ALL_LANE_KEYS.forEach(lKey => {
-                    if (boardState[lKey]) {
-                        const idx = boardState[lKey].findIndex(c => c.id === cardId);
-                        if (idx !== -1) {
-                            cardToMove = boardState[lKey].splice(idx, 1)[0];
-                        }
-                    }
-                });
-            }
+    function toggleMemorizeMode() {
+      isMemorizeMode = !isMemorizeMode;
+      const btn = document.getElementById('start-btn');
 
-            if (!cardToMove) return;
+      if (isMemorizeMode) {
+        btn.textContent = "配置モードに戻る";
+        setAllFaceDown(true);
+        updateStatus("暗記スタート！札をタップするとめくれます");
+      } else {
+        btn.textContent = "暗記スタート (裏返す)";
+        setAllFaceDown(false);
+        updateStatus("配置モード");
+      }
+      renderAll();
+    }
 
-            // ターゲットレーンに移動・追加
-            if (!boardState[targetLaneKey]) boardState[targetLaneKey] = [];
-            boardState[targetLaneKey].push(cardToMove);
-
-            selectedCardId = null;
-            updateUI();
+    function setAllFaceDown(status) {
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 15; c++) {
+          if (enemyBoard[r][c]) enemyBoard[r][c].isFaceDown = status;
+          if (selfBoard[r][c]) selfBoard[r][c].isFaceDown = status;
         }
+      }
+    }
 
-        // 札を手札プールに戻す処理
-        function returnCardToPool(cardId, sourceLaneKey) {
-            if (!boardState[sourceLaneKey]) return;
+    function updateStatus(msg) {
+      document.getElementById('status-msg').textContent = msg;
+    }
 
-            const idx = boardState[sourceLaneKey].findIndex(c => c.id === cardId);
-            if (idx !== -1) {
-                const card = boardState[sourceLaneKey].splice(idx, 1)[0];
-                cardPool.push(card);
-            }
-
-            selectedCardId = null;
-            updateUI();
-        }
-
-        // 暗記ボタンテキスト＆表示状態の更新
-        function updateFlipButtonText() {
-            const btn = document.getElementById('btn-flip-all');
-            const txt = document.getElementById('flip-btn-text');
-            if (isFlippedAll) {
-                txt.textContent = "全札を表にする";
-                btn.classList.replace('bg-emerald-700', 'bg-amber-700');
-                btn.classList.replace('hover:bg-emerald-600', 'hover:bg-amber-600');
-            } else {
-                txt.textContent = "暗記スタート (全裏返し)";
-                btn.classList.replace('bg-amber-700', 'bg-emerald-700');
-                btn.classList.replace('hover:bg-amber-600', 'hover:bg-emerald-600');
-            }
-        }
-
-        // タイマーフォーマット (分:秒)
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60).toString().padStart(2, '0');
-            const s = (sec % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-
-        function toggleTimer() {
-            if (isTimerRunning) stopTimer();
-            else startTimer();
-        }
-
-        function startTimer() {
-            if (isTimerRunning) return;
-            isTimerRunning = true;
-            document.getElementById('timer-icon').classList.replace('fa-play', 'fa-pause');
-            timerInterval = setInterval(() => {
-                if (timerSeconds > 0) {
-                    timerSeconds--;
-                    document.getElementById('timer-display').textContent = formatTime(timerSeconds);
-                } else {
-                    stopTimer();
-                    alert("暗記時間の15分が経過しました！暗記の確認に入りましょう。");
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            isTimerRunning = false;
-            document.getElementById('timer-icon').classList.replace('fa-pause', 'fa-play');
-            clearInterval(timerInterval);
-        }
-
-        function resetTimer() {
-            stopTimer();
-            timerSeconds = 15 * 60;
-            document.getElementById('timer-display').textContent = formatTime(timerSeconds);
-        }
-
-        // アプリケーション起動
-        window.onload = initApp;
-    </script>
+    initGame();
+  </script>
 </body>
 </html>
