@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>競技かるた 暗記＆配置トレーニング</title>
+  <title>競技かるた 暗記＆配置トレーニング（100首フル対応）</title>
   <style>
     :root {
       --tatami-bg: #d8be92;
       --tatami-border: #6a4f28;
       --card-bg: #fffcf2;
-      --card-border: #225128;
-      --text-color: #111;
-      --grid-border: rgba(100, 70, 30, 0.2);
-      --selected: #e74c3c;
+      --card-border: #1e4620;
+      --text-color: #000;
+      --grid-border: rgba(100, 70, 30, 0.25);
+      --selected: #ff9800;
     }
 
     * {
@@ -24,9 +24,9 @@
     body {
       margin: 0;
       padding: 10px;
-      background-color: #222;
+      background-color: #1e1e1e;
       color: #fff;
-      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Sawarabi Mincho', serif;
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -38,20 +38,19 @@
       text-align: center;
     }
 
-    /* ツールバー */
     .toolbar {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
       margin-bottom: 10px;
-      background: #333;
-      padding: 8px 15px;
+      background: #2c2c2c;
+      padding: 8px 12px;
       border-radius: 8px;
     }
 
     button {
-      background: #38761d;
+      background: #2e7d32;
       color: white;
       border: none;
       padding: 6px 12px;
@@ -61,34 +60,19 @@
       font-weight: bold;
     }
 
-    button:hover {
-      background: #274e13;
-    }
+    button:hover { background: #1b5e20; }
+    button.secondary { background: #555; }
+    button.secondary:hover { background: #444; }
+    button.action { background: #c62828; }
+    button.action:hover { background: #b71c1c; }
 
-    button.secondary {
-      background: #555;
-    }
-
-    button.secondary:hover {
-      background: #444;
-    }
-
-    button.action {
-      background: #cc0000;
-    }
-
-    button.action:hover {
-      background: #990000;
-    }
-
-    /* 畳の盤面 */
     .board {
       background-color: var(--tatami-bg);
       border: 10px solid var(--tatami-border);
       border-radius: 4px;
       padding: 8px;
       width: 100%;
-      max-width: 1000px;
+      max-width: 1050px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -98,7 +82,7 @@
     .field-section {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
     .section-title {
@@ -113,78 +97,70 @@
 
     .align-btns {
       display: flex;
-      gap: 3px;
+      gap: 4px;
       flex-wrap: wrap;
     }
 
     .align-btns button {
       padding: 2px 6px;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       background: #6a4f28;
     }
 
-    .align-btns button:hover {
-      background: #4a3518;
-    }
-
-    /* 15マスグリッド行 */
     .row-grid {
       display: grid;
       grid-template-columns: repeat(15, 1fr);
-      gap: 2px;
-      background: rgba(0,0,0,0.06);
-      padding: 2px;
-      border-radius: 2px;
+      gap: 3px;
+      background: rgba(0,0,0,0.08);
+      padding: 3px;
+      border-radius: 3px;
     }
 
-    /* マス目 */
     .slot {
-      aspect-ratio: 0.7;
+      aspect-ratio: 0.68;
       border: 1px dashed var(--grid-border);
-      border-radius: 2px;
+      border-radius: 3px;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
       position: relative;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .slot:hover {
-      background: rgba(56, 118, 29, 0.2);
+      background: rgba(46, 125, 50, 0.25);
     }
 
-    /* 札デザイン */
     .card {
       width: 100%;
       height: 100%;
       background: var(--card-bg);
-      border: 1.5px solid var(--card-border);
+      border: 2px solid var(--card-border);
       border-radius: 2px;
       color: var(--text-color);
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 1px;
-      box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      padding: 2px;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       cursor: pointer;
       position: relative;
-      font-size: 0.65rem;
+      font-size: 0.85rem;
+      font-weight: bold;
       writing-mode: vertical-rl;
       text-orientation: upright;
-      letter-spacing: 0.5px;
-      font-weight: 500;
+      letter-spacing: 1px;
       line-height: 1.1;
     }
 
-    /* 敵陣は札が逆さま */
     .enemy-field .card-text {
       transform: rotate(180deg);
     }
 
     .card.back {
-      background: #225128;
-      border: 1.5px solid #fff;
+      background: #1e4620;
+      border: 2px solid #fff;
     }
 
     .card.back .card-text {
@@ -192,24 +168,23 @@
     }
 
     .card.selected {
-      outline: 2px solid var(--selected);
+      outline: 3px solid var(--selected);
+      box-shadow: 0 0 8px var(--selected);
     }
 
-    /* 中央境界線 */
     .center-divider {
-      height: 2px;
+      height: 3px;
       background: var(--tatami-border);
       margin: 2px 0;
-      opacity: 0.6;
+      opacity: 0.7;
     }
 
-    /* 山札・ステータスエリア */
     .controls-bottom {
       margin-top: 10px;
       width: 100%;
-      max-width: 1000px;
-      background: #2a2a2a;
-      padding: 8px 15px;
+      max-width: 1050px;
+      background: #2c2c2c;
+      padding: 10px 15px;
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -223,38 +198,36 @@
     }
 
     .deck-card {
-      width: 42px;
-      height: 60px;
+      width: 52px;
+      height: 72px;
       background: var(--card-bg);
       border: 2px solid var(--card-border);
       border-radius: 3px;
-      color: #111;
+      color: #000;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       writing-mode: vertical-rl;
       font-weight: bold;
-      box-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
       padding: 2px;
     }
 
-    .deck-info {
-      font-size: 0.85rem;
-    }
-
     .status-text {
-      font-size: 0.9rem;
-      color: #f1c40f;
+      font-size: 0.95rem;
+      color: #f39c12;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-  <h1>競技かるた 暗記＆配置トレーニング</h1>
+  <h1>競技かるた 暗記＆配置トレーニング（100首対応）</h1>
 
   <div class="toolbar">
-    <button onclick="initGame()">リセット・新しく並べる</button>
+    <button onclick="initGame()">新しく並べる (50枚選出)</button>
+    <button class="secondary" onclick="resetSelfBoard()">自陣を並べ直す</button>
     <button class="secondary" onclick="autoPlaceSelf()">自陣をおまかせ自動配置</button>
     <button class="action" id="start-btn" onclick="toggleMemorizeMode()">暗記スタート (裏返す)</button>
   </div>
@@ -299,142 +272,96 @@
     </div>
   </div>
 
-  <!-- 下部：自陣配置用コントロール -->
   <div class="controls-bottom">
     <div class="deck-area">
       <div class="deck-card" id="current-deck-card">束</div>
-      <div class="deck-info">
+      <div>
         <div>自陣山札: <span id="deck-count">25</span> 枚</div>
-        <div style="font-size: 0.75rem; color: #bbb;">マス目をタップして配置</div>
+        <div style="font-size: 0.75rem; color: #aaa;">マス目タップで配置 / 札タップで移動・選択</div>
       </div>
     </div>
     <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
   </div>
 
   <script>
-    // 百人一首 全100首 完全データ
-    const HYAKUNIN_ISSHU = [
-      { id: 1, kami: "あきのたの", shimo: "わかころもてはつゆにぬれつつ" },
-      { id: 2, kami: "はるすきて", shimo: "ころもほすてふあまのかくやま" },
-      { id: 3, kami: "あしひきの", shimo: "ながながしよをひとりかもねむ" },
-      { id: 4, kami: "たこのうらに", shimo: "ふしのたかねにゆきはふりつつ" },
-      { id: 5, kami: "おくやまに", shimo: "こえきくときそあきはかなしき" },
-      { id: 6, kami: "かささきの", shimo: "しろきをみれはそそふけにける" },
-      { id: 7, kami: "あまのはら", shimo: "ふりさけみれはかすかになるの" },
-      { id: 8, kami: "わかいほは", shimo: "みやこのたつみしかそすむとおう" },
-      { id: 9, kami: "はなさのくは", shimo: "わかみなからになをおいにはて" },
-      { id: 10, kami: "これやこの", shimo: "しるもしらぬもあふさかのせき" },
-      { id: 11, kami: "わたのはらや", shimo: "くもゐにまかふおきつしらなみ" },
-      { id: 12, kami: "あまつかせ", shimo: "をとめのすかたしばしとどめむ" },
-      { id: 13, kami: "つくはねの", shimo: "みみたのふちとなりにけるかな" },
-      { id: 14, kami: "みちのくの", shimo: "みたれるのちのわたしはならむ" },
-      { id: 15, kami: "きみかためは", shimo: "わかころもてにゆきはふりつつ" },
-      { id: 16, kami: "たちわかれ", shimo: "まつとしきかばいまかへりこむ" },
-      { id: 17, kami: "ちはやふる", shimo: "からくれなゐにみづくくるとは" },
-      { id: 18, kami: "すみのえの", shimo: "ゆめのかよいじひとはよくれど" },
-      { id: 19, kami: "なにわかた", shimo: "みをつくしてもあはむとぞおもう" },
-      { id: 20, kami: "わびぬれば", shimo: "あはでこのよをすぐしてよとや" },
-      { id: 21, kami: "いまこむと", shimo: "ありあけのつきをまちいでつるかな" },
-      { id: 22, kami: "ふくからに", shimo: "むべやまかぜをあらしというらむ" },
-      { id: 23, kami: "つきみれば", shimo: "わがみひとつのあきにはあらねど" },
-      { id: 24, kami: "このたびは", shimo: "もみじのにしきかみのまにまに" },
-      { id: 25, kami: "なにわえの", shimo: "みじかきあしのふしのまの" },
-      { id: 26, kami: "小倉山", shimo: "いまひとたびのよくもがな" },
-      { id: 27, kami: "みかのはら", shimo: "いつみきとてかこいしかるらむ" },
-      { id: 28, kami: "やまざとは", shimo: "ひとめもくさもかれぬとおもえば" },
-      { id: 29, kami: "心あてに", shimo: "おきまどわせるしらぎくのはな" },
-      { id: 30, kami: "ありあけの", shimo: "あかずわかれしあかつきばかり" },
-      { id: 31, kami: "あさぼらけあ", shimo: "よしのにふれるゆきかとぞみる" },
-      { id: 32, kami: "やまがわに", shimo: "ながれもあえぬもみじなりけり" },
-      { id: 33, kami: "ひさかたの", shimo: "しずころもなくてはなさくらむ" },
-      { id: 34, kami: "たれをかも", shimo: "たかさごのおのまつもむかしの" },
-      { id: 35, kami: "ひとはいさ", shimo: "はなぞむかしのかににおいける" },
-      { id: 36, kami: "夏の夜は", shimo: "くものいずこにつきやどるらむ" },
-      { id: 37, kami: "しらゆきに", shimo: "ふりしきりたるあきののべかな" },
-      { id: 38, kami: "わすらるる", shimo: "ひとのいのちの惜しくもあるかな" },
-      { id: 39, kami: "あさじうの", shimo: "あまりてなどかひとのこいしき" },
-      { id: 40, kami: "しのぶれど", shimo: "ものやおもうとひとのとうまで" },
-      { id: 41, kami: "こいすちょう", shimo: "わがなはまだきたちにけるかな" },
-      { id: 42, kami: "ちぎりきな", shimo: "すえのまつちなくなみこさじとは" },
-      { id: 43, kami: "あいみての", shimo: "むかしはものを思わざりけり" },
-      { id: 44, kami: "おうことも", shimo: "ひとをみをつらさのおもうかな" },
-      { id: 45, kami: "あわれとも", shimo: "みをつくしてやみをはてぬらむ" },
-      { id: 46, kami: "ゆらのとを", shimo: "ゆくへも知らぬこいのみちかな" },
-      { id: 47, kami: "八重むぐら", shimo: "ひとこそ見えねあきはきにけり" },
-      { id: 48, kami: "風をいたみ", shimo: "くだけてものを思ふころかな" },
-      { id: 49, kami: "みかきもり", shimo: "昼は消えつつものをこそ思え" },
-      { id: 50, kami: "君がため惜", shimo: "ながくもがなと思いけるかな" },
-      { id: 51, kami: "かくとだに", shimo: "さしも草のさしも思いじ" },
-      { id: 52, kami: "あけぬれば", shimo: "なおうらめしきあさぼらけかな" },
-      { id: 53, kami: "なげきつつ", shimo: "いかにひさしきものとかはしる" },
-      { id: 54, kami: "忘れじの", shimo: "きょうを限りのいのちともがな" },
-      { id: 55, kami: "滝の音は", shimo: "ながれ絶えても名こそ流れれ" },
-      { id: 56, kami: "あらざらむ", shimo: "いまひとたびのあうこともがな" },
-      { id: 57, kami: "めぐりあいて", shimo: "雲がくれにし夜半の月かな" },
-      { id: 58, kami: "有馬山", shimo: "いでそよ人を忘れやはする" },
-      { id: 59, kami: "やすらわで", shimo: "かたぶくまでの月を見しかな" },
-      { id: 60, kami: "大江山", shimo: "まだふみも見ずあまのはしだて" },
-      { id: 61, kami: "いにしえの", shimo: "きょう九重ににおいぬるかな" },
-      { id: 62, kami: "夜をこめて", shimo: "よに逢坂の関はゆるさじ" },
-      { id: 63, kami: "いまはただ", shimo: "人づてならで逢うよしもがな" },
-      { id: 64, kami: "朝ぼらけ字", shimo: "あらでたてるは朝のしらも" },
-      { id: 65, kami: "恨みわび", shimo: "恋に朽ちなむ名こそ惜しけれ" },
-      { id: 66, kami: "もろともに", shimo: "花よりほかに知る人もなし" },
-      { id: 67, kami: "春の夜の", shimo: "かいなく立ちにし名こそ惜しけれ" },
-      { id: 68, kami: "心にも", shimo: "おもい外なる夜半の月かな" },
-      { id: 69, kami: "あらしふく", shimo: "たつたの山のあきのもみじば" },
-      { id: 70, kami: "さびしさに", shimo: "いずこも同じ秋の夕ぐれ" },
-      { id: 71, kami: "夕されば", shimo: "あしのまろやに秋風ぞふく" },
-      { id: 72, kami: "音にきく", shimo: "かけじやそでのぬれもこそすれ" },
-      { id: 73, kami: "高砂の", shimo: "とやまのさくら咲きにけり" },
-      { id: 74, kami: "うかりける", shimo: "はつせのやまのおろしよ" },
-      { id: 75, kami: "ちぎりおきし", shimo: "あわれことしのあきもいぬめり" },
-      { id: 76, kami: "わたの原こ", shimo: "雲ゐにまとうおきつしらなみ" },
-      { id: 77, kami: "瀬をはやみ", shimo: "われても末に逢わむとぞ思う" },
-      { id: 78, kami: "淡路島", shimo: "いく夜かくけぬすまのせきもり" },
-      { id: 79, kami: "秋かぜに", shimo: "もれづる月の影のさやけさ" },
-      { id: 80, kami: "長からむ", shimo: "みだれて今朝はものをこそ思え" },
-      { id: 81, kami: "ほととぎす", shimo: "ただ有明の月ぞのこれる" },
-      { id: 82, kami: "思いわび", shimo: "いくよさめぬるものゆえに" },
-      { id: 83, kami: "世の中よ", shimo: "山のおくにも訪ねてぞ住む" },
-      { id: 84, kami: "ながらえば", shimo: "いまこのごろやしのばれむ" },
-      { id: 85, kami: "夜もすがら", shimo: "ねやのひますだももみじ葉" },
-      { id: 86, kami: "なげけとて", shimo: "かこちがほなるわがなみだかな" },
-      { id: 87, kami: "むらさめの", shimo: "まだくものこるまきのいたや" },
-      { id: 88, kami: "なにわえの", shimo: "みじかきあしのふしのまの" },
-      { id: 89, kami: "玉の緒よ", shimo: "ながえに絶えなば絶えね" },
-      { id: 90, kami: "見せばやな", shimo: "おじまのあまのそでだにも" },
-      { id: 91, kami: "きりぎりす", shimo: "さもよさむるさむしろの" },
-      { id: 92, kami: "わが袖は", shimo: "ひとにしられでかわきもせず" },
-      { id: 93, kami: "世の中は", shimo: "あまのおのふねつなでかなしも" },
-      { id: 94, kami: "みよしのの", shimo: "ふるさと寒く衣うつなり" },
-      { id: 95, kami: "おけやくも", shimo: "つらき人にはあらじと思えば" },
-      { id: 96, kami: "花さそう", shimo: "ふりゆくものは我が身なりけり" },
-      { id: 97, kami: "こぬ人を", shimo: "やくやもしおの身もこがれつつ" },
-      { id: 98, kami: "風そよぐ", shimo: "みそぎぞ夏のしるしなりける" },
-      { id: 99, kami: "ひとも惜し", shimo: "よもおしからむあらしの風" },
-      { id: 100, kami: "ももしきや", shimo: "なおあまりあるむかしなりけり" }
+    // 百人一首 全100首データ (1~100)
+    const RAW_DATA = [
+      [1,"あきのたの","わかころもてはつゆにぬれつつ"],[2,"はるすきて","ころもほすてふあまのかくやま"],
+      [3,"あしひきの","ながながしよをひとりかもねむ"],[4,"たこのうらに","ふしのたかねにゆきはふりつつ"],
+      [5,"おくやまに","こえきくときそあきはかなしき"],[6,"かささきの","しろきをみれはそそふけにける"],
+      [7,"あまのはら","ふりさけみれはかすかになるの"],[8,"わかいほは","みやこのたつみしかそすむとおう"],
+      [9,"はなさのくは","わかみなからになをおいにはて"],[10,"これやこの","しるもしらぬもあふさかのせき"],
+      [11,"わたのはらや","くもゐにまかふおきつしらなみ"],[12,"あまつかせ","をとめのすかたしばしとどめむ"],
+      [13,"つくはねの","みみたのふちとなりにけるかな"],[14,"みちのくの","みたれるのちのわたしはならむ"],
+      [15,"きみかためは","わかころもてにゆきはふりつつ"],[16,"たちわかれ","まつとしきかばいまかへりこむ"],
+      [17,"ちはやふる","からくれなゐにみづくくるとは"],[18,"すみのえの","ゆめのかよいじひとはよくれど"],
+      [19,"なにわかた","みをつくしてもあはむとぞおもう"],[20,"わびぬれば","あはでこのよをすぐしてよとや"],
+      [21,"いまこむと","ありあけのつきをまちいでつるかな"],[22,"ふくからに","むべやまかぜをあらしというらむ"],
+      [23,"つきみれば","わがみひとつのあきにはあらねど"],[24,"このたびは","もみじのにしきかみのまにまに"],
+      [25,"なにわえの","みじかきあしのふしのまの"],[26,"おぐらやま","いまひとたびのよくもがな"],
+      [27,"みかのはら","いつみきとてかこいしかるらむ"],[28,"やまざとは","ひとめもくさもかれぬとおもえば"],
+      [29,"こころあてに","おきまどわせるしらぎくのはな"],[30,"ありあけの","あかずわかれしあかつきばかり"],
+      [31,"あさぼらけあ","よしのにふれるゆきかとぞみる"],[32,"やまがわに","ながれもあえぬもみじなりけり"],
+      [33,"ひさかたの","しずころもなくてはなさくらむ"],[34,"たれをかも","たかさごのおのまつもむかしの"],
+      [35,"ひとはいさ","はなぞむかしのかににおいける"],[36,"なつのよは","くものいずこにつきやどるらむ"],
+      [37,"しらゆきに","ふりしきりたるあきののべかな"],[38,"わすらるる","ひとのいのちの惜しくもあるかな"],
+      [39,"あさじうの","あまりてなどかひとのこいしき"],[40,"しのぶれど","ものやおもうとひとのとうまで"],
+      [41,"こいすちょう","わがなはまだきたちにけるかな"],[42,"ちぎりきな","すえのまつちなくならむ"],
+      [43,"あいみての","むかしはものを思わざりけり"],[44,"おうことも","ひとをみをつらさのおもうかな"],
+      [45,"あわれとも","みをつくしてやみをはてぬらむ"],[46,"ゆらのとを","ゆくへも知らぬこいのみちかな"],
+      [47,"やえむぐら","ひとこそ見えねあきはきにけり"],[48,"かぜをいたみ","くだけてものを思ふころかな"],
+      [49,"みかきもり","昼は消えつつものをこそ思え"],[50,"きみがためお","ながくもがなと思いけるかな"],
+      [51,"かくとだに","さしものぐさのさしもじはじ"],[52,"あけぬれば","なおうらめしきあさぼらけかな"],
+      [53,"なげきつつ","ひとりぬるよのあくるまは"],[54,"わすれじの","ゆくすえまではかたければ"],
+      [55,"たきのおとは","たえてのちひさふりぬれど"],[56,"あらざらむ","いまひとたびのあうこともがな"],
+      [57,"めぐりあいて","つきかげかくれてみえざりしかな"],[58,"ありまやま","いでそよひとはわすれやはする"],
+      [59,"やすらわで","かたぶくまでのつきをみしかな"],[60,"おおえやま","まだふみもみずあまのはしだて"],
+      [61,"いにしえの","きょうここのえににおいぬるかな"],[62,"よをこめて","よしののせきはゆるさざりけり"],
+      [63,"いまはただ","いつわりならでいいやめるかな"],[64,"あさぼらけう","あられふりおくるあじろぎのなみ"],
+      [65,"うらみわび","こいじにくちんとなの惜しくもある"],[66,"もろともに","はなよりほかに知る人もなし"],
+      [67,"はるのよの","かいなくたたむなこそ惜しけれ"],[68,"こころにも","おくやまのつきをかなしと見しかな"],
+      [69,"あらしふく","たつたのやまのもみじばふりぬ"],[70,"さびしさに","いづこもおなじあきのゆうぐれ"],
+      [71,"ゆうされば","おきのたのいほにこおろぎぞなき"],[72,"おとにきく","かけじやそでのぬれもこそすれ"],
+      [73,"たかさごの","とうのたかねにゆきはふりつつ"],[74,"うかりける","はつせのやまのおろしはげしも"],
+      [75,"ちぎりおきし","あわれことしのあきもいぬめり"],[76,"わたのはらこ","くもゐにまかふおきつしらなみ"],
+      [77,"せをはやみ","われてもすえにあわむとぞおもう"],[78,"淡路島","いくよざめざめすまのせきもり"],
+      [79,"秋かぜに","もれづるつきのつらさとも見ず"],[80,"ながからむ","みだれてけさはものをこそ思え"],
+      [81,"ほとのへに","ながめせしまにふりぬるものを"],[82,"おもいやる","こころのうちはしるひとぞなき"],
+      [83,"世の中よ","みちこそなけれおもうには"],[84,"長ならむ","こころの底のしらぬものから"],
+      [85,"夜もすがら","もの思うころはあけやらで"],[86,"なげけとて","つきやはものを思わせる"],
+      [87,"むらさめの","つゆもまだひぬまきの葉に"],[88,"なにわえの","みじかきあしのふしのまの"],
+      [89,"玉の緒よ","たえなばたえねながらえば"],[90,"みせばやな","おじまのあまのそでだにも"],
+      [91,"きりぎりす","なくやしもよのさむき夜に"],[92,"わがそでは","しおひにみえぬおきのいし"],
+      [93,"世の中は","つねにもがもななぎさこぐ"],[94,"みつのうらの","なみにアイデアをよせかける"],
+      [95,"おおかたは","つきをもめでじこれまでに"],[96,"花さそう","あらしののちのきのうかな"],
+      [97,"こぬ人を","まつほのうらのゆうなぎに"],[98,"風そよぐ","ならの小川のゆうぐれは"],
+      [99,"ひともよし","ひともうらめしあじきなく"],[100,"ももしきや","ふるきろきよのしのぶかな"]
     ];
+
+    const HYAKUNIN_ISSHU = RAW_DATA.map(d => ({ id: d[0], kami: d[1], shimo: d[2] }));
 
     let enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfDeck = [];
     let currentCard = null;
+    let selectedSlot = null;
     let isMemorizeMode = false;
 
     function initGame() {
       isMemorizeMode = false;
+      selectedSlot = null;
       document.getElementById('start-btn').textContent = "暗記スタート (裏返す)";
 
-      // 全100首からシャッフルして50枚を抽出
+      // 100首からランダムに50首を選出（競技かるたルール）
       const shuffled = [...HYAKUNIN_ISSHU].sort(() => Math.random() - 0.5);
-      const enemyCards = shuffled.slice(0, 25);
-      selfDeck = shuffled.slice(25, 50);
+      const selected50 = shuffled.slice(0, 50);
+
+      const enemyCards = selected50.slice(0, 25);
+      selfDeck = selected50.slice(25, 50);
 
       enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
       selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
 
-      // 敵陣25枚をランダム配置
       let placed = 0;
       while (placed < 25) {
         let r = Math.floor(Math.random() * 3);
@@ -447,6 +374,7 @@
 
       popDeckCard();
       renderAll();
+      updateStatus("自陣のマス目をタップして札を並べてね");
     }
 
     function popDeckCard() {
@@ -479,6 +407,10 @@
             const card = document.createElement('div');
             card.className = `card ${cardData.isFaceDown ? 'back' : ''}`;
 
+            if (selectedSlot && selectedSlot.r === r && selectedSlot.c === c && side === 'self') {
+              card.classList.add('selected');
+            }
+
             const text = document.createElement('div');
             text.className = 'card-text';
             text.textContent = cardData.shimo;
@@ -492,9 +424,8 @@
     }
 
     function handleSlotClick(side, r, c) {
-      const targetBoard = side === 'enemy' ? enemyBoard : selfBoard;
-
       if (isMemorizeMode) {
+        const targetBoard = side === 'enemy' ? enemyBoard : selfBoard;
         if (targetBoard[r][c]) {
           targetBoard[r][c].isFaceDown = !targetBoard[r][c].isFaceDown;
           renderAll();
@@ -503,30 +434,68 @@
       }
 
       if (side === 'self') {
-        if (!targetBoard[r][c] && currentCard) {
-          targetBoard[r][c] = { ...currentCard, isFaceDown: false };
-          popDeckCard();
-          renderAll();
-          updateStatus("札を配置しました");
+        const card = selfBoard[r][c];
+
+        if (selectedSlot) {
+          if (selectedSlot.r === r && selectedSlot.c === c) {
+            selectedSlot = null;
+            updateStatus("選択を解除しました");
+          } else if (!card) {
+            selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
+            selfBoard[selectedSlot.r][selectedSlot.c] = null;
+            selectedSlot = null;
+            updateStatus("札を移動しました");
+          } else {
+            const temp = selfBoard[r][c];
+            selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
+            selfBoard[selectedSlot.r][selectedSlot.c] = temp;
+            selectedSlot = null;
+            updateStatus("札を入れ替えました");
+          }
+        } else {
+          if (card) {
+            selectedSlot = { r, c };
+            updateStatus("移動先の空きマスか、入れ替える札を選んでね");
+          } else if (currentCard) {
+            selfBoard[r][c] = { ...currentCard, isFaceDown: false };
+            popDeckCard();
+            updateStatus("札を配置しました");
+          }
+        }
+        renderAll();
+      }
+    }
+
+    function resetSelfBoard() {
+      if (isMemorizeMode) return;
+      let allSelfCards = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 15; c++) {
+          if (selfBoard[r][c]) {
+            allSelfCards.push(selfBoard[r][c]);
+            selfBoard[r][c] = null;
+          }
         }
       }
+      if (currentCard) allSelfCards.push(currentCard);
+      selfDeck = selfDeck.concat(allSelfCards).sort(() => Math.random() - 0.5);
+      currentCard = null;
+      selectedSlot = null;
+      popDeckCard();
+      renderAll();
+      updateStatus("自陣の札をリセットして山札に戻しました");
     }
 
     function alignRow(side, rowIdx, direction) {
       const board = side === 'enemy' ? enemyBoard : selfBoard;
       const row = board[rowIdx];
-      
       const cards = row.filter(c => c !== null);
       const newRow = Array(15).fill(null);
 
       if (direction === 'left') {
-        for (let i = 0; i < cards.length; i++) {
-          newRow[i] = cards[i];
-        }
+        for (let i = 0; i < cards.length; i++) newRow[i] = cards[i];
       } else {
-        for (let i = 0; i < cards.length; i++) {
-          newRow[15 - cards.length + i] = cards[i];
-        }
+        for (let i = 0; i < cards.length; i++) newRow[15 - cards.length + i] = cards[i];
       }
 
       board[rowIdx] = newRow;
@@ -535,7 +504,6 @@
 
     function autoPlaceSelf() {
       if (isMemorizeMode) return;
-      
       let remainingCards = [];
       if (currentCard) remainingCards.push(currentCard);
       remainingCards = remainingCards.concat(selfDeck);
@@ -564,6 +532,7 @@
 
     function toggleMemorizeMode() {
       isMemorizeMode = !isMemorizeMode;
+      selectedSlot = null;
       const btn = document.getElementById('start-btn');
 
       if (isMemorizeMode) {
