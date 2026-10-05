@@ -6,13 +6,14 @@
   <title>競技かるた 暗記＆配置トレーニング</title>
   <style>
     :root {
-      --tatami-bg: #c9a76d;
-      --tatami-border: #4a341b;
-      --card-bg: #fffbf0;
+      --tatami-bg: #d4b277;
+      --tatami-border: #4a3319;
+      --card-bg: #fffdf5;
       --card-border: #1a4314;
       --text-color: #111;
-      --grid-border: rgba(90, 60, 20, 0.25);
-      --selected: #ff6f00;
+      --grid-border: rgba(80, 50, 15, 0.25);
+      --selected: #ff8c00;
+      --drop-zone: #4caf50;
     }
 
     * {
@@ -24,10 +25,10 @@
 
     body {
       margin: 0;
-      padding: 4px;
-      background-color: #121212;
+      padding: 8px;
+      background-color: #1a1a1a;
       color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -35,111 +36,125 @@
       touch-action: manipulation;
     }
 
+    h1 {
+      margin: 4px 0 8px 0;
+      font-size: 1.2rem;
+      text-align: center;
+    }
+
+    /* ツールバー */
     .toolbar {
       display: flex;
-      gap: 4px;
+      gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-bottom: 6px;
-      background: #222;
-      padding: 6px;
+      margin-bottom: 8px;
+      background: #2a2a2a;
+      padding: 8px 12px;
       border-radius: 8px;
       width: 100%;
+      max-width: 1100px;
     }
 
     button {
       background: #2e7d32;
       color: white;
       border: none;
-      padding: 8px 10px;
+      padding: 8px 14px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: bold;
-      flex: 1 1 auto;
-      min-width: 80px;
-      text-align: center;
+      transition: background 0.2s, transform 0.1s;
+      touch-action: manipulation;
     }
 
-    button:active { opacity: 0.7; transform: scale(0.98); }
-    button.secondary { background: #444; }
-    button.action { background: #d32f2f; }
+    button:active { opacity: 0.8; transform: scale(0.96); }
+    button.secondary { background: #555; }
+    button.action { background: #c62828; }
     button.shift-btn { background: #e65100; padding: 6px 12px; }
 
-    /* 全体を画面幅いっぱいに fit させるラッパー */
-    .board-wrapper {
+    /* 畳の盤面コンテナ (完全サイズ一致) */
+    .board-container {
       width: 100%;
-      overflow-x: auto;
+      max-width: 1100px;
       display: flex;
-      justify-content: center;
-      padding: 2px 0;
+      flex-direction: column;
+      align-items: center;
     }
 
     .board {
       background-color: var(--tatami-bg);
-      border: 6px solid var(--tatami-border);
-      border-radius: 6px;
-      padding: 4px;
+      border: 8px solid var(--tatami-border);
+      border-radius: 8px;
+      padding: 8px;
       width: 100%;
-      max-width: 900px;
-      min-width: 600px; /* ある程度の横長形状を担保 */
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      gap: 8px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
     }
 
     .field-section {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      width: 100%;
     }
 
     .section-header {
-      color: #332107;
+      color: #3d2b0f;
       font-weight: bold;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 4px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 3px;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
     }
 
     .align-btns {
       display: flex;
-      gap: 2px;
+      gap: 4px;
     }
 
     .align-btns button {
-      padding: 2px 6px;
-      font-size: 0.65rem;
-      background: #5d4037;
-      min-width: auto;
-      border-radius: 3px;
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      background: #6a4f28;
+      border-radius: 4px;
     }
 
+    /* 自陣・相手陣完全均等の15列グリッド */
     .row-grid {
       display: grid;
       grid-template-columns: repeat(15, 1fr);
       gap: 2px;
-      background: rgba(0,0,0,0.06);
+      background: rgba(0, 0, 0, 0.08);
       padding: 2px;
-      border-radius: 3px;
+      border-radius: 4px;
+      width: 100%;
     }
 
     .slot {
-      aspect-ratio: 0.68;
+      aspect-ratio: 0.68; /* 札の競技比率に固定 */
       border: 1px dashed var(--grid-border);
       border-radius: 3px;
       display: flex;
       justify-content: center;
       align-items: center;
       position: relative;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
+      transition: background 0.15s;
     }
 
+    .slot.drag-over {
+      background: rgba(76, 175, 80, 0.4);
+      border: 1.5px solid var(--drop-zone);
+    }
+
+    /* かるたの札デザイン */
     .card {
       width: 100%;
       height: 100%;
@@ -151,15 +166,21 @@
       justify-content: center;
       align-items: center;
       padding: 1px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.3);
       position: relative;
-      font-size: clamp(0.55rem, 1.2vw, 0.85rem);
+      font-size: clamp(0.5rem, 1.4vw, 0.95rem);
       font-weight: bold;
       writing-mode: vertical-rl;
       text-orientation: upright;
       letter-spacing: 0.5px;
-      line-height: 1;
+      line-height: 1.05;
       font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      cursor: grab;
+      touch-action: none; /* ドラッグ操作用にブラウザ標準動作を抑制 */
+    }
+
+    .card:active {
+      cursor: grabbing;
     }
 
     .enemy-field .card-text {
@@ -167,7 +188,7 @@
     }
 
     .card.back {
-      background: #1b4314;
+      background: #1e4620;
       border: 1.5px solid #fff;
     }
 
@@ -182,17 +203,20 @@
     }
 
     .center-divider {
-      height: 2px;
+      height: 4px;
       background: var(--tatami-border);
-      opacity: 0.6;
-      margin: 1px 0;
+      opacity: 0.7;
+      margin: 2px 0;
+      border-radius: 2px;
     }
 
+    /* コントロールエリア */
     .controls-bottom {
-      margin-top: 6px;
+      margin-top: 10px;
       width: 100%;
-      background: #222;
-      padding: 8px;
+      max-width: 1100px;
+      background: #2a2a2a;
+      padding: 10px 14px;
       border-radius: 8px;
       display: flex;
       flex-direction: column;
@@ -204,18 +228,18 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
     }
 
     .deck-area {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
     .deck-card {
-      width: 38px;
-      height: 52px;
+      width: 46px;
+      height: 64px;
       background: var(--card-bg);
       border: 2px solid var(--card-border);
       border-radius: 3px;
@@ -223,39 +247,45 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 0.7rem;
+      font-size: 0.75rem;
       writing-mode: vertical-rl;
       font-weight: bold;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
       font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      cursor: grab;
+      touch-action: none;
     }
 
     .shift-controls {
       display: flex;
       gap: 6px;
       align-items: center;
-      background: #111;
-      padding: 4px 8px;
+      background: #1a1a1a;
+      padding: 6px 10px;
       border-radius: 6px;
     }
 
     .status-text {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #ffb74d;
       font-weight: bold;
       text-align: center;
     }
 
-    /* 横画面で盤面を最大化 */
-    @media (orientation: landscape) {
-      body { padding: 2px; }
-      .board { max-width: 98vw; }
-      .controls-bottom { padding: 4px 8px; }
+    /* ドラッグ時の追従要素 */
+    .drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.85;
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
   </style>
 </head>
-
 <body>
+
+  <h1>競技かるた 暗記＆配置トレーニング</h1>
 
   <div class="toolbar">
     <button onclick="initGame()">新しく並べる (50枚)</button>
@@ -264,12 +294,12 @@
     <button class="action" id="start-btn" onclick="toggleMemorizeMode()">暗記スタート (裏返す)</button>
   </div>
 
-  <div class="board-wrapper">
+  <div class="board-container">
     <div class="board">
-      <!-- 相手陣 -->
+      <!-- 相手陣 (上段/中段/下段) -->
       <div class="field-section enemy-field">
         <div class="section-header">
-          <span>相手陣</span>
+          <span>相手陣 (完全自動配置)</span>
           <div class="align-btns">
             <span>上:</span>
             <button onclick="alignEnemyRow(0, 'left')">左</button>
@@ -289,10 +319,10 @@
 
       <div class="center-divider"></div>
 
-      <!-- 自陣 -->
+      <!-- 自陣 (上段/中段/下段) -->
       <div class="field-section self-field">
         <div class="section-header">
-          <span>自陣</span>
+          <span>自陣 (スライド・ドラッグで配置)</span>
         </div>
         <div class="row-grid" id="self-row-0"></div>
         <div class="row-grid" id="self-row-1"></div>
@@ -305,22 +335,24 @@
     <div class="deck-and-shift">
       <div class="deck-area">
         <div class="deck-card" id="current-deck-card">束</div>
-        <div style="font-size:0.75rem;">
-          <div>自陣山札: <span id="deck-count">25</span> 枚</div>
+        <div style="font-size:0.85rem;">
+          <div>手札山札: <span id="deck-count">25</span> 枚</div>
+          <div style="font-size:0.7rem; color:#aaa;">指でドラッグして自陣へ移動</div>
         </div>
       </div>
 
       <div class="shift-controls">
-        <span style="font-size:0.7rem; color:#aaa;">自陣グループ寄せ:</span>
-        <button class="shift-btn" onclick="shiftSelfGroup('left')">← 左</button>
-        <button class="shift-btn" onclick="shiftSelfGroup('right')">右 →</button>
+        <span style="font-size:0.75rem; color:#aaa;">自陣寄せ操作:</span>
+        <button class="shift-btn" onclick="shiftSelfGroup('left')">← 左寄せ</button>
+        <button class="shift-btn" onclick="shiftSelfGroup('right')">右寄せ →</button>
       </div>
     </div>
 
-    <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
+    <div class="status-text" id="status-msg">手札または自陣の札をドラッグして動かしてね</div>
   </div>
 
   <script>
+    // 百人一首 100首データ（上の句 / 下の句）
     const RAW_DATA = [
       [1,"あきのたの","わかころもてはつゆにぬれつつ"],[2,"はるすきて","ころもほすてふあまのかくやま"],
       [3,"あしひきの","ながながしよをひとりかもねむ"],[4,"たこのうらに","ふしのたかねにゆきはふりつつ"],
@@ -371,11 +403,12 @@
       [93,"世の中は","つねにもがもななぎさこぐ"],[94,"みつのうらの","なみにアイデアをよせかける"],
       [95,"おおかたは","つきをもめでじこれまでに"],[96,"花さそう","あらしののちのきのうかな"],
       [97,"こぬ人を","まつほのうらのゆうなぎに"],[98,"風そよぐ","ならの小川のゆうぐれは"],
-      [99,"ひともよし","ひともうらめしあじきなく"],[100,"ももしきや","ふるきろきよのしのぶかな"]
+      [99,"ひともよし","ひともうらめしあじきなく"],[100,"もとしきや","ふるきろきよのしのぶかな"]
     ];
 
     const HYAKUNIN_ISSHU = RAW_DATA.map(d => ({ id: d[0], kami: d[1], shimo: d[2] }));
 
+    // 盤面データ構造
     let enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfDeck = [];
@@ -383,11 +416,16 @@
     let selectedSlot = null;
     let isMemorizeMode = false;
 
+    // ドラッグ状態
+    let dragData = null; // { source: 'deck'|'self', card: Object, r: number, c: number }
+    let dragGhost = null;
+
     function initGame() {
       isMemorizeMode = false;
       selectedSlot = null;
       document.getElementById('start-btn').textContent = "暗記スタート (裏返す)";
 
+      // ランダムに50枚抽出（25枚相手陣、25枚自陣用）
       const shuffled = [...HYAKUNIN_ISSHU].sort(() => Math.random() - 0.5);
       const selected50 = shuffled.slice(0, 50);
 
@@ -397,6 +435,7 @@
       enemyBoard = Array(3).fill(null).map(() => Array(15).fill(null));
       selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
 
+      // 相手陣に25枚ランダム配置
       let placed = 0;
       while (placed < 25) {
         let r = Math.floor(Math.random() * 3);
@@ -409,16 +448,19 @@
 
       popDeckCard();
       renderAll();
-      updateStatus("マス目を選んで札を置いてね");
+      updateStatus("手札または自陣の札をドラッグして置けるよ");
     }
 
     function popDeckCard() {
       if (selfDeck.length > 0) {
         currentCard = selfDeck.pop();
-        document.getElementById('current-deck-card').textContent = currentCard.shimo;
+        const deckEl = document.getElementById('current-deck-card');
+        deckEl.textContent = currentCard.shimo;
+        deckEl.style.display = 'flex';
       } else {
         currentCard = null;
-        document.getElementById('current-deck-card').textContent = "完了";
+        const deckEl = document.getElementById('current-deck-card');
+        deckEl.textContent = "完了";
       }
       document.getElementById('deck-count').textContent = selfDeck.length + (currentCard ? 1 : 0);
     }
@@ -426,6 +468,7 @@
     function renderAll() {
       renderGrid('enemy', enemyBoard);
       renderGrid('self', selfBoard);
+      setupDragEvents();
     }
 
     function renderGrid(side, boardData) {
@@ -435,12 +478,17 @@
         for (let c = 0; c < 15; c++) {
           const slot = document.createElement('div');
           slot.className = 'slot';
-          slot.onclick = () => handleSlotClick(side, r, c);
+          slot.dataset.side = side;
+          slot.dataset.r = r;
+          slot.dataset.c = c;
 
           const cardData = boardData[r][c];
           if (cardData) {
             const card = document.createElement('div');
             card.className = `card ${cardData.isFaceDown ? 'back' : ''}`;
+            card.dataset.side = side;
+            card.dataset.r = r;
+            card.dataset.c = c;
 
             if (side === 'self' && selectedSlot && selectedSlot.r === r && selectedSlot.c === c) {
               card.classList.add('selected');
@@ -458,6 +506,135 @@
       }
     }
 
+    // ドラッグ＆スライド統合処理 (Touch & Mouse両対応)
+    function setupDragEvents() {
+      // 山札のドラッグ設定
+      const deckEl = document.getElementById('current-deck-card');
+      if (currentCard && !isMemorizeMode) {
+        attachDragSource(deckEl, { source: 'deck' });
+      }
+
+      // 自陣札のドラッグ設定
+      document.querySelectorAll('.self-field .card').forEach(cardEl => {
+        if (!isMemorizeMode) {
+          const r = parseInt(cardEl.dataset.r);
+          const c = parseInt(cardEl.dataset.c);
+          attachDragSource(cardEl, { source: 'self', r, c });
+        }
+      });
+
+      // タップ（裏返し/選択操作）用イベント
+      document.querySelectorAll('.slot').forEach(slotEl => {
+        slotEl.onclick = (e) => handleSlotClick(slotEl.dataset.side, parseInt(slotEl.dataset.r), parseInt(slotEl.dataset.c));
+      });
+    }
+
+    function attachDragSource(element, sourceInfo) {
+      const handleStart = (e) => {
+        if (isMemorizeMode) return;
+        const touch = e.touches ? e.touches[0] : e;
+
+        if (sourceInfo.source === 'deck') {
+          if (!currentCard) return;
+          dragData = { source: 'deck', card: currentCard };
+        } else if (sourceInfo.source === 'self') {
+          const card = selfBoard[sourceInfo.r][sourceInfo.c];
+          if (!card) return;
+          dragData = { source: 'self', card, r: sourceInfo.r, c: sourceInfo.c };
+        }
+
+        // 追従ゴースト要素作成
+        dragGhost = element.cloneNode(true);
+        dragGhost.classList.add('drag-ghost');
+        document.body.appendChild(dragGhost);
+        moveGhost(touch.clientX, touch.clientY);
+
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+      };
+
+      element.addEventListener('mousedown', handleStart);
+      element.addEventListener('touchstart', handleStart, { passive: false });
+    }
+
+    function moveGhost(x, y) {
+      if (dragGhost) {
+        dragGhost.style.left = `${x}px`;
+        dragGhost.style.top = `${y}px`;
+      }
+    }
+
+    function handleMove(e) {
+      if (!dragData) return;
+      if (e.cancelable) e.preventDefault();
+      const touch = e.touches ? e.touches[0] : e;
+      moveGhost(touch.clientX, touch.clientY);
+
+      // ドロップ先のハイライト処理
+      document.querySelectorAll('.slot').forEach(s => s.classList.remove('drag-over'));
+      const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (targetEl) {
+        const slot = targetEl.closest('.slot');
+        if (slot && slot.dataset.side === 'self') {
+          slot.classList.add('drag-over');
+        }
+      }
+    }
+
+    function handleEnd(e) {
+      if (!dragData) return;
+      const touch = e.changedTouches ? e.changedTouches[0] : e;
+
+      document.querySelectorAll('.slot').forEach(s => s.classList.remove('drag-over'));
+      if (dragGhost) {
+        dragGhost.remove();
+        dragGhost = null;
+      }
+
+      const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (targetEl) {
+        const slot = targetEl.closest('.slot');
+        if (slot && slot.dataset.side === 'self') {
+          const targetR = parseInt(slot.dataset.r);
+          const targetC = parseInt(slot.dataset.c);
+          executeDrop(targetR, targetC);
+        }
+      }
+
+      dragData = null;
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    }
+
+    function executeDrop(targetR, targetC) {
+      if (dragData.source === 'deck') {
+        const existingCard = selfBoard[targetR][targetC];
+        selfBoard[targetR][targetC] = { ...dragData.card, isFaceDown: false };
+
+        if (existingCard) {
+          // すでに札がある場合はその位置に入れ替え、余りを山札に戻すか置換
+          selfDeck.push(existingCard);
+        }
+        popDeckCard();
+        updateStatus("自陣に配置しました");
+      } else if (dragData.source === 'self') {
+        const { r: srcR, c: srcC, card } = dragData;
+        if (srcR === targetR && srcC === targetC) return;
+
+        const targetCard = selfBoard[targetR][targetC];
+        selfBoard[targetR][targetC] = card;
+        selfBoard[srcR][srcC] = targetCard; // 入れ替えまたは空スロット移動
+
+        updateStatus("札を移動・入れ替えました");
+      }
+      selectedSlot = null;
+      renderAll();
+    }
+
     function handleSlotClick(side, r, c) {
       if (isMemorizeMode) {
         const targetBoard = side === 'enemy' ? enemyBoard : selfBoard;
@@ -470,37 +647,22 @@
 
       if (side === 'self') {
         const card = selfBoard[r][c];
-
-        if (selectedSlot) {
-          if (selectedSlot.r === r && selectedSlot.c === c) {
+        if (card) {
+          if (selectedSlot && selectedSlot.r === r && selectedSlot.c === c) {
             selectedSlot = null;
-            updateStatus("選択解除");
-          } else if (!card) {
-            selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
-            selfBoard[selectedSlot.r][selectedSlot.c] = null;
-            selectedSlot = null;
-            updateStatus("移動しました");
+            updateStatus("選択を解除しました");
           } else {
-            const temp = selfBoard[r][c];
-            selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
-            selfBoard[selectedSlot.r][selectedSlot.c] = temp;
-            selectedSlot = null;
-            updateStatus("入れ替えました");
+            selectedSlot = { r, c };
+            updateStatus("札を選択中（寄せ操作が可能）");
           }
         } else {
-          if (card) {
-            selectedSlot = { r, c };
-            updateStatus("選択中: 寄せ操作または移動先を選択");
-          } else if (currentCard) {
-            selfBoard[r][c] = { ...currentCard, isFaceDown: false };
-            popDeckCard();
-            updateStatus("配置しました");
-          }
+          selectedSlot = null;
         }
         renderAll();
       }
     }
 
+    // 相手陣段一括左右寄せ
     function alignEnemyRow(rowIdx, direction) {
       const row = enemyBoard[rowIdx];
       const cards = row.filter(c => c !== null);
@@ -517,9 +679,10 @@
       updateStatus(`相手陣 ${rowIdx + 1}段目を寄せる`);
     }
 
+    // 自陣：選択札の連続グループ単位で左右寄せ
     function shiftSelfGroup(direction) {
       if (!selectedSlot) {
-        updateStatus("自陣の札を選択してから寄せボタンを押してね！");
+        updateStatus("自陣の札をタップして選択してから「寄せ」を押してね！");
         return;
       }
 
@@ -596,7 +759,7 @@
       selectedSlot = null;
       popDeckCard();
       renderAll();
-      updateStatus("自陣リセット完了");
+      updateStatus("自陣の札をリセットしました");
     }
 
     function autoPlaceSelf() {
@@ -635,7 +798,7 @@
       if (isMemorizeMode) {
         btn.textContent = "配置モードに戻る";
         setAllFaceDown(true);
-        updateStatus("暗記スタート！タップで裏表切り替え");
+        updateStatus("暗記スタート！タップで札をめくれます");
       } else {
         btn.textContent = "暗記スタート (裏返す)";
         setAllFaceDown(false);
@@ -657,6 +820,7 @@
       document.getElementById('status-msg').textContent = msg;
     }
 
+    // 初期化実行
     initGame();
   </script>
 </body>
