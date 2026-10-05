@@ -6,123 +6,125 @@
   <title>競技かるた 暗記＆配置トレーニング</title>
   <style>
     :root {
-      --tatami-bg: #d8be92;
-      --tatami-border: #6a4f28;
-      --card-bg: #fffcf2;
-      --card-border: #1e4620;
-      --text-color: #000;
-      --grid-border: rgba(100, 70, 30, 0.3);
-      --selected: #ff9800;
+      --tatami-bg: #c9a76d;
+      --tatami-border: #4a341b;
+      --card-bg: #fffbf0;
+      --card-border: #1a4314;
+      --text-color: #111;
+      --grid-border: rgba(90, 60, 20, 0.25);
+      --selected: #ff6f00;
     }
 
     * {
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       margin: 0;
-      padding: 8px;
-      background-color: #1e1e1e;
+      padding: 4px;
+      background-color: #121212;
       color: #fff;
-      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-    }
-
-    h1 {
-      margin: 4px 0 8px 0;
-      font-size: 1.1rem;
-      text-align: center;
+      touch-action: manipulation;
     }
 
     .toolbar {
       display: flex;
-      gap: 6px;
+      gap: 4px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-bottom: 8px;
-      background: #2c2c2c;
-      padding: 6px 10px;
+      margin-bottom: 6px;
+      background: #222;
+      padding: 6px;
       border-radius: 8px;
       width: 100%;
-      max-width: 1000px;
     }
 
     button {
       background: #2e7d32;
       color: white;
       border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 8px 10px;
+      border-radius: 6px;
       cursor: pointer;
       font-size: 0.8rem;
       font-weight: bold;
-      touch-action: manipulation;
+      flex: 1 1 auto;
+      min-width: 80px;
+      text-align: center;
     }
 
-    button:active { opacity: 0.8; }
-    button.secondary { background: #555; }
-    button.action { background: #c62828; }
-    button.shift-btn { background: #e65100; }
+    button:active { opacity: 0.7; transform: scale(0.98); }
+    button.secondary { background: #444; }
+    button.action { background: #d32f2f; }
+    button.shift-btn { background: #e65100; padding: 6px 12px; }
 
-    /* 盤面全体をレスポンシブに（スマホでは横スクロール可能） */
-    .board-container {
+    /* 全体を画面幅いっぱいに fit させるラッパー */
+    .board-wrapper {
       width: 100%;
-      max-width: 1000px;
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      border-radius: 6px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      padding: 2px 0;
     }
 
     .board {
       background-color: var(--tatami-bg);
-      border: 8px solid var(--tatami-border);
-      border-radius: 4px;
-      padding: 6px;
-      min-width: 750px; /* 15マスが潰れない最小幅を確保 */
+      border: 6px solid var(--tatami-border);
+      border-radius: 6px;
+      padding: 4px;
+      width: 100%;
+      max-width: 900px;
+      min-width: 600px; /* ある程度の横長形状を担保 */
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
 
     .field-section {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
-    .section-title {
-      color: #3d2b0f;
+    .section-header {
+      color: #332107;
       font-weight: bold;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 2px;
+      padding: 0 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
     }
 
     .align-btns {
       display: flex;
-      gap: 3px;
-      flex-wrap: wrap;
+      gap: 2px;
     }
 
     .align-btns button {
-      padding: 2px 5px;
-      font-size: 0.7rem;
-      background: #6a4f28;
+      padding: 2px 6px;
+      font-size: 0.65rem;
+      background: #5d4037;
+      min-width: auto;
+      border-radius: 3px;
     }
 
     .row-grid {
       display: grid;
       grid-template-columns: repeat(15, 1fr);
       gap: 2px;
-      background: rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.06);
       padding: 2px;
       border-radius: 3px;
     }
@@ -134,9 +136,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      cursor: pointer;
       position: relative;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .card {
@@ -150,15 +151,15 @@
       justify-content: center;
       align-items: center;
       padding: 1px;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       position: relative;
-      font-size: 0.75rem;
+      font-size: clamp(0.55rem, 1.2vw, 0.85rem);
       font-weight: bold;
       writing-mode: vertical-rl;
       text-orientation: upright;
       letter-spacing: 0.5px;
-      line-height: 1.05;
+      line-height: 1;
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
     }
 
     .enemy-field .card-text {
@@ -166,7 +167,7 @@
     }
 
     .card.back {
-      background: #1e4620;
+      background: #1b4314;
       border: 1.5px solid #fff;
     }
 
@@ -175,40 +176,46 @@
     }
 
     .card.selected {
-      outline: 2.5px solid var(--selected);
-      box-shadow: 0 0 6px var(--selected);
+      outline: 3px solid var(--selected);
+      box-shadow: 0 0 8px var(--selected);
+      z-index: 2;
     }
 
     .center-divider {
-      height: 3px;
+      height: 2px;
       background: var(--tatami-border);
+      opacity: 0.6;
       margin: 1px 0;
-      opacity: 0.7;
     }
 
     .controls-bottom {
-      margin-top: 8px;
+      margin-top: 6px;
       width: 100%;
-      max-width: 1000px;
-      background: #2c2c2c;
-      padding: 8px 12px;
+      background: #222;
+      padding: 8px;
       border-radius: 8px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
       gap: 8px;
+    }
+
+    .deck-and-shift {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       flex-wrap: wrap;
+      gap: 8px;
     }
 
     .deck-area {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .deck-card {
-      width: 44px;
-      height: 60px;
+      width: 38px;
+      height: 52px;
       background: var(--card-bg);
       border: 2px solid var(--card-border);
       border-radius: 3px;
@@ -216,38 +223,39 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       writing-mode: vertical-rl;
       font-weight: bold;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-      padding: 2px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
     }
 
     .shift-controls {
       display: flex;
       gap: 6px;
       align-items: center;
-      background: #1e1e1e;
+      background: #111;
       padding: 4px 8px;
       border-radius: 6px;
     }
 
     .status-text {
-      font-size: 0.85rem;
-      color: #f39c12;
+      font-size: 0.8rem;
+      color: #ffb74d;
       font-weight: bold;
-      width: 100%;
       text-align: center;
     }
 
-    @media (min-width: 600px) {
-      .status-text { width: auto; text-align: left; }
+    /* 横画面で盤面を最大化 */
+    @media (orientation: landscape) {
+      body { padding: 2px; }
+      .board { max-width: 98vw; }
+      .controls-bottom { padding: 4px 8px; }
     }
   </style>
 </head>
-<body>
 
-  <h1>競技かるた 暗記＆配置</h1>
+<body>
 
   <div class="toolbar">
     <button onclick="initGame()">新しく並べる (50枚)</button>
@@ -256,19 +264,22 @@
     <button class="action" id="start-btn" onclick="toggleMemorizeMode()">暗記スタート (裏返す)</button>
   </div>
 
-  <div class="board-container">
+  <div class="board-wrapper">
     <div class="board">
       <!-- 相手陣 -->
       <div class="field-section enemy-field">
-        <div class="section-title">
+        <div class="section-header">
           <span>相手陣</span>
           <div class="align-btns">
-            <button onclick="alignEnemyRow(0, 'left')">上左</button>
-            <button onclick="alignEnemyRow(0, 'right')">上右</button>
-            <button onclick="alignEnemyRow(1, 'left')">中左</button>
-            <button onclick="alignEnemyRow(1, 'right')">中右</button>
-            <button onclick="alignEnemyRow(2, 'left')">下左</button>
-            <button onclick="alignEnemyRow(2, 'right')">下右</button>
+            <span>上:</span>
+            <button onclick="alignEnemyRow(0, 'left')">左</button>
+            <button onclick="alignEnemyRow(0, 'right')">右</button>
+            <span>中:</span>
+            <button onclick="alignEnemyRow(1, 'left')">左</button>
+            <button onclick="alignEnemyRow(1, 'right')">右</button>
+            <span>下:</span>
+            <button onclick="alignEnemyRow(2, 'left')">左</button>
+            <button onclick="alignEnemyRow(2, 'right')">右</button>
           </div>
         </div>
         <div class="row-grid" id="enemy-row-0"></div>
@@ -280,7 +291,7 @@
 
       <!-- 自陣 -->
       <div class="field-section self-field">
-        <div class="section-title">
+        <div class="section-header">
           <span>自陣</span>
         </div>
         <div class="row-grid" id="self-row-0"></div>
@@ -291,18 +302,19 @@
   </div>
 
   <div class="controls-bottom">
-    <div class="deck-area">
-      <div class="deck-card" id="current-deck-card">束</div>
-      <div style="font-size:0.85rem;">
-        <div>自陣山札: <span id="deck-count">25</span> 枚</div>
+    <div class="deck-and-shift">
+      <div class="deck-area">
+        <div class="deck-card" id="current-deck-card">束</div>
+        <div style="font-size:0.75rem;">
+          <div>自陣山札: <span id="deck-count">25</span> 枚</div>
+        </div>
       </div>
-    </div>
 
-    <!-- 自陣用：選択札のグループ寄せ操作 -->
-    <div class="shift-controls">
-      <span style="font-size:0.75rem; color:#ccc;">自陣寄せ:</span>
-      <button class="shift-btn" onclick="shiftSelfGroup('left')">← 左寄せ</button>
-      <button class="shift-btn" onclick="shiftSelfGroup('right')">右寄せ →</button>
+      <div class="shift-controls">
+        <span style="font-size:0.7rem; color:#aaa;">自陣グループ寄せ:</span>
+        <button class="shift-btn" onclick="shiftSelfGroup('left')">← 左</button>
+        <button class="shift-btn" onclick="shiftSelfGroup('right')">右 →</button>
+      </div>
     </div>
 
     <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
@@ -462,27 +474,27 @@
         if (selectedSlot) {
           if (selectedSlot.r === r && selectedSlot.c === c) {
             selectedSlot = null;
-            updateStatus("選択を解除しました");
+            updateStatus("選択解除");
           } else if (!card) {
             selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
             selfBoard[selectedSlot.r][selectedSlot.c] = null;
             selectedSlot = null;
-            updateStatus("札を移動しました");
+            updateStatus("移動しました");
           } else {
             const temp = selfBoard[r][c];
             selfBoard[r][c] = selfBoard[selectedSlot.r][selectedSlot.c];
             selfBoard[selectedSlot.r][selectedSlot.c] = temp;
             selectedSlot = null;
-            updateStatus("札を入れ替えました");
+            updateStatus("入れ替えました");
           }
         } else {
           if (card) {
             selectedSlot = { r, c };
-            updateStatus("自陣の札を選択しました");
+            updateStatus("選択中: 寄せ操作または移動先を選択");
           } else if (currentCard) {
             selfBoard[r][c] = { ...currentCard, isFaceDown: false };
             popDeckCard();
-            updateStatus("札を配置しました");
+            updateStatus("配置しました");
           }
         }
         renderAll();
@@ -502,12 +514,12 @@
 
       enemyBoard[rowIdx] = newRow;
       renderAll();
-      updateStatus(`相手陣 ${rowIdx + 1}段目を寄せました`);
+      updateStatus(`相手陣 ${rowIdx + 1}段目を寄せる`);
     }
 
     function shiftSelfGroup(direction) {
       if (!selectedSlot) {
-        updateStatus("自陣の札をタップして選択してから動かしてね！");
+        updateStatus("自陣の札を選択してから寄せボタンを押してね！");
         return;
       }
 
@@ -584,7 +596,7 @@
       selectedSlot = null;
       popDeckCard();
       renderAll();
-      updateStatus("自陣の札をリセットしました");
+      updateStatus("自陣リセット完了");
     }
 
     function autoPlaceSelf() {
@@ -623,7 +635,7 @@
       if (isMemorizeMode) {
         btn.textContent = "配置モードに戻る";
         setAllFaceDown(true);
-        updateStatus("暗記スタート！札をタップするとめくれます");
+        updateStatus("暗記スタート！タップで裏表切り替え");
       } else {
         btn.textContent = "暗記スタート (裏返す)";
         setAllFaceDown(false);
