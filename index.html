@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>競技かるた 暗記＆配置トレーニング</title>
   <style>
     :root {
@@ -11,7 +11,7 @@
       --card-bg: #fffcf2;
       --card-border: #1e4620;
       --text-color: #000;
-      --grid-border: rgba(100, 70, 30, 0.25);
+      --grid-border: rgba(100, 70, 30, 0.3);
       --selected: #ff9800;
     }
 
@@ -23,62 +23,71 @@
 
     body {
       margin: 0;
-      padding: 10px;
+      padding: 8px;
       background-color: #1e1e1e;
       color: #fff;
       font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
     }
 
     h1 {
-      margin: 5px 0 10px 0;
-      font-size: 1.2rem;
+      margin: 4px 0 8px 0;
+      font-size: 1.1rem;
       text-align: center;
     }
 
     .toolbar {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
       justify-content: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       background: #2c2c2c;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border-radius: 8px;
+      width: 100%;
+      max-width: 1000px;
     }
 
     button {
       background: #2e7d32;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 6px 10px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: bold;
+      touch-action: manipulation;
     }
 
-    button:hover { background: #1b5e20; }
+    button:active { opacity: 0.8; }
     button.secondary { background: #555; }
-    button.secondary:hover { background: #444; }
     button.action { background: #c62828; }
-    button.action:hover { background: #b71c1c; }
     button.shift-btn { background: #e65100; }
-    button.shift-btn:hover { background: #ef6c00; }
+
+    /* 盤面全体をレスポンシブに（スマホでは横スクロール可能） */
+    .board-container {
+      width: 100%;
+      max-width: 1000px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
 
     .board {
       background-color: var(--tatami-bg);
-      border: 10px solid var(--tatami-border);
+      border: 8px solid var(--tatami-border);
       border-radius: 4px;
-      padding: 8px;
-      width: 100%;
-      max-width: 1050px;
+      padding: 6px;
+      min-width: 750px; /* 15マスが潰れない最小幅を確保 */
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      gap: 8px;
     }
 
     .field-section {
@@ -90,31 +99,31 @@
     .section-title {
       color: #3d2b0f;
       font-weight: bold;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 4px;
+      padding: 0 2px;
     }
 
     .align-btns {
       display: flex;
-      gap: 4px;
+      gap: 3px;
       flex-wrap: wrap;
     }
 
     .align-btns button {
-      padding: 2px 6px;
-      font-size: 0.75rem;
+      padding: 2px 5px;
+      font-size: 0.7rem;
       background: #6a4f28;
     }
 
     .row-grid {
       display: grid;
       grid-template-columns: repeat(15, 1fr);
-      gap: 3px;
+      gap: 2px;
       background: rgba(0,0,0,0.08);
-      padding: 3px;
+      padding: 2px;
       border-radius: 3px;
     }
 
@@ -130,30 +139,26 @@
       background: rgba(255, 255, 255, 0.15);
     }
 
-    .slot:hover {
-      background: rgba(46, 125, 50, 0.25);
-    }
-
     .card {
       width: 100%;
       height: 100%;
       background: var(--card-bg);
-      border: 2px solid var(--card-border);
+      border: 1.5px solid var(--card-border);
       border-radius: 2px;
       color: var(--text-color);
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 2px;
+      padding: 1px;
       box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       cursor: pointer;
       position: relative;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       font-weight: bold;
       writing-mode: vertical-rl;
       text-orientation: upright;
-      letter-spacing: 1px;
-      line-height: 1.1;
+      letter-spacing: 0.5px;
+      line-height: 1.05;
     }
 
     .enemy-field .card-text {
@@ -162,7 +167,7 @@
 
     .card.back {
       background: #1e4620;
-      border: 2px solid #fff;
+      border: 1.5px solid #fff;
     }
 
     .card.back .card-text {
@@ -170,40 +175,40 @@
     }
 
     .card.selected {
-      outline: 3px solid var(--selected);
-      box-shadow: 0 0 8px var(--selected);
+      outline: 2.5px solid var(--selected);
+      box-shadow: 0 0 6px var(--selected);
     }
 
     .center-divider {
       height: 3px;
       background: var(--tatami-border);
-      margin: 2px 0;
+      margin: 1px 0;
       opacity: 0.7;
     }
 
     .controls-bottom {
-      margin-top: 10px;
+      margin-top: 8px;
       width: 100%;
-      max-width: 1050px;
+      max-width: 1000px;
       background: #2c2c2c;
-      padding: 10px 15px;
+      padding: 8px 12px;
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .deck-area {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .deck-card {
-      width: 52px;
-      height: 72px;
+      width: 44px;
+      height: 60px;
       background: var(--card-bg);
       border: 2px solid var(--card-border);
       border-radius: 3px;
@@ -211,7 +216,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       writing-mode: vertical-rl;
       font-weight: bold;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
@@ -223,73 +228,81 @@
       gap: 6px;
       align-items: center;
       background: #1e1e1e;
-      padding: 6px 10px;
+      padding: 4px 8px;
       border-radius: 6px;
     }
 
     .status-text {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #f39c12;
       font-weight: bold;
+      width: 100%;
+      text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .status-text { width: auto; text-align: left; }
     }
   </style>
 </head>
 <body>
 
-  <h1>競技かるた 暗記＆配置トレーニング</h1>
+  <h1>競技かるた 暗記＆配置</h1>
 
   <div class="toolbar">
-    <button onclick="initGame()">新しく並べる (50枚選出)</button>
-    <button class="secondary" onclick="resetSelfBoard()">自陣を並べ直す</button>
-    <button class="secondary" onclick="autoPlaceSelf()">自陣をおまかせ自動配置</button>
+    <button onclick="initGame()">新しく並べる (50枚)</button>
+    <button class="secondary" onclick="resetSelfBoard()">自陣リセット</button>
+    <button class="secondary" onclick="autoPlaceSelf()">おまかせ配置</button>
     <button class="action" id="start-btn" onclick="toggleMemorizeMode()">暗記スタート (裏返す)</button>
   </div>
 
-  <div class="board">
-    <!-- 相手陣（段ごとの左右寄せボタン復活） -->
-    <div class="field-section enemy-field">
-      <div class="section-title">
-        <span>相手陣</span>
-        <div class="align-btns">
-          <button onclick="alignEnemyRow(0, 'left')">上段左寄</button>
-          <button onclick="alignEnemyRow(0, 'right')">上段右寄</button>
-          <button onclick="alignEnemyRow(1, 'left')">中段左寄</button>
-          <button onclick="alignEnemyRow(1, 'right')">中段右寄</button>
-          <button onclick="alignEnemyRow(2, 'left')">下段左寄</button>
-          <button onclick="alignEnemyRow(2, 'right')">下段右寄</button>
+  <div class="board-container">
+    <div class="board">
+      <!-- 相手陣 -->
+      <div class="field-section enemy-field">
+        <div class="section-title">
+          <span>相手陣</span>
+          <div class="align-btns">
+            <button onclick="alignEnemyRow(0, 'left')">上左</button>
+            <button onclick="alignEnemyRow(0, 'right')">上右</button>
+            <button onclick="alignEnemyRow(1, 'left')">中左</button>
+            <button onclick="alignEnemyRow(1, 'right')">中右</button>
+            <button onclick="alignEnemyRow(2, 'left')">下左</button>
+            <button onclick="alignEnemyRow(2, 'right')">下右</button>
+          </div>
         </div>
+        <div class="row-grid" id="enemy-row-0"></div>
+        <div class="row-grid" id="enemy-row-1"></div>
+        <div class="row-grid" id="enemy-row-2"></div>
       </div>
-      <div class="row-grid" id="enemy-row-0"></div>
-      <div class="row-grid" id="enemy-row-1"></div>
-      <div class="row-grid" id="enemy-row-2"></div>
-    </div>
 
-    <div class="center-divider"></div>
+      <div class="center-divider"></div>
 
-    <!-- 自陣 -->
-    <div class="field-section self-field">
-      <div class="section-title">
-        <span>自陣</span>
+      <!-- 自陣 -->
+      <div class="field-section self-field">
+        <div class="section-title">
+          <span>自陣</span>
+        </div>
+        <div class="row-grid" id="self-row-0"></div>
+        <div class="row-grid" id="self-row-1"></div>
+        <div class="row-grid" id="self-row-2"></div>
       </div>
-      <div class="row-grid" id="self-row-0"></div>
-      <div class="row-grid" id="self-row-1"></div>
-      <div class="row-grid" id="self-row-2"></div>
     </div>
   </div>
 
   <div class="controls-bottom">
     <div class="deck-area">
       <div class="deck-card" id="current-deck-card">束</div>
-      <div>
+      <div style="font-size:0.85rem;">
         <div>自陣山札: <span id="deck-count">25</span> 枚</div>
       </div>
     </div>
 
     <!-- 自陣用：選択札のグループ寄せ操作 -->
     <div class="shift-controls">
-      <span style="font-size:0.8rem; color:#ccc;">自陣選択札の寄せ:</span>
-      <button class="shift-btn" onclick="shiftSelfGroup('left')">← 端まで左寄せ</button>
-      <button class="shift-btn" onclick="shiftSelfGroup('right')">端まで右寄せ →</button>
+      <span style="font-size:0.75rem; color:#ccc;">自陣寄せ:</span>
+      <button class="shift-btn" onclick="shiftSelfGroup('left')">← 左寄せ</button>
+      <button class="shift-btn" onclick="shiftSelfGroup('right')">右寄せ →</button>
     </div>
 
     <div class="status-text" id="status-msg">マス目を選んで札を置いてね</div>
@@ -355,7 +368,7 @@
     let selfBoard = Array(3).fill(null).map(() => Array(15).fill(null));
     let selfDeck = [];
     let currentCard = null;
-    let selectedSlot = null; // { r: 0..2, c: 0..14 } 自陣の選択用
+    let selectedSlot = null;
     let isMemorizeMode = false;
 
     function initGame() {
@@ -384,7 +397,7 @@
 
       popDeckCard();
       renderAll();
-      updateStatus("自陣のマス目を選んで札を置いてね");
+      updateStatus("マス目を選んで札を置いてね");
     }
 
     function popDeckCard() {
@@ -443,7 +456,6 @@
         return;
       }
 
-      // 自陣の操作のみ受付
       if (side === 'self') {
         const card = selfBoard[r][c];
 
@@ -466,7 +478,7 @@
         } else {
           if (card) {
             selectedSlot = { r, c };
-            updateStatus("自陣の札を選択しました。移動・入れ替えまたは下のボタンでグループ寄せができます");
+            updateStatus("自陣の札を選択しました");
           } else if (currentCard) {
             selfBoard[r][c] = { ...currentCard, isFaceDown: false };
             popDeckCard();
@@ -477,7 +489,6 @@
       }
     }
 
-    // 相手陣の一括左右寄せ
     function alignEnemyRow(rowIdx, direction) {
       const row = enemyBoard[rowIdx];
       const cards = row.filter(c => c !== null);
@@ -491,10 +502,9 @@
 
       enemyBoard[rowIdx] = newRow;
       renderAll();
-      updateStatus(`相手陣 ${rowIdx + 1}段目を${direction === 'left' ? '左' : '右'}に寄せました`);
+      updateStatus(`相手陣 ${rowIdx + 1}段目を寄せました`);
     }
 
-    // 自陣の選択グループ寄せ
     function shiftSelfGroup(direction) {
       if (!selectedSlot) {
         updateStatus("自陣の札をタップして選択してから動かしてね！");
